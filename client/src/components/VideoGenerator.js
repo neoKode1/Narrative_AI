@@ -1,58 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import './VideoGenerator.css';
+import Navbar from './Navbar';
+import { useLocation } from 'react-router-dom';
 
 function VideoGenerator() {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [generatedImages, setGeneratedImages] = useState([]);
-  const [referenceImage, setReferenceImage] = useState(null);
-  const navigate = useNavigate();
+  const location = useLocation();
+  const { selectedImage } = location.state || {};
+
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [promptText, setPromptText] = useState('');
 
   useEffect(() => {
-    const storedImage = JSON.parse(localStorage.getItem('selectedImage'));
-    setSelectedImage(storedImage);
+    console.log("Received selectedImage prop:", selectedImage);
+  }, [selectedImage]);
 
-    const storedGeneratedImages = JSON.parse(localStorage.getItem('generatedImages'));
-    setGeneratedImages(storedGeneratedImages || []);
-  }, []);
+  const generateVideo = async () => {
+    if (!selectedImage) {
+      console.error('No image selected.');
+      return;
+    }
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setReferenceImage(imageUrl);
+    setLoading(true);
+    try {
+      // Create FormData to send the image file and the prompt text
+      const formData = new FormData();
+      formData.append('image', selectedImage); // Image file
+      formData.append('promptText', promptText); // Prompt
+
+      // Send image to backend for upload to S3 and video generation
+      const response = await fetch('http://localhost:5000/api/video/generate', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      setVideoUrl(data.videoUrl);
+    } catch (error) {
+      console.error('Error generating video:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="VideoGenerator">
-      <h1>Video Generator</h1>
-      <h2>Use an image to animate it, and create a video with audio.</h2>
+    <div className="video-generator">
+      <Navbar />
+      <video autoPlay loop muted className="background-video">
+        <source src="/sheff.mp4.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
 
-      {/* Reference image upload */}
-      <div className="reference-upload">
-        <input type="file" onChange={handleImageUpload} />
-        {referenceImage && <img src={referenceImage} alt="Reference" className="reference-img" />}
+      <div className="content">
+        <h1>Video Generator</h1>
+
+        {selectedImage && (
+          <img src={URL.createObjectURL(selectedImage)} alt="Selected" style={{ width: '300px', height: 'auto' }} />
+        )}
+
+        <input
+          type="text"
+          value={promptText}
+          onChange={(e) => setPromptText(e.target.value)}
+          placeholder="Enter animation prompt"
+          className="prompt-input"
+        />
+
+        <button onClick={generateVideo} disabled={loading}>
+          {loading ? 'Generating Video...' : 'Generate Video'}
+        </button>
+
+        {videoUrl && (
+          <div>
+            <h2>Generated Video:</h2>
+            <video src={videoUrl} controls style={{ width: '100%', maxWidth: '600px' }} />
+          </div>
+        )}
       </div>
-
-      {/* Selected image to animate */}
-      {selectedImage && <img src={selectedImage} alt="Selected for animation" />}
-
-      {/* Side panel with previously generated images */}
-      <div className="side-panel">
-        <h3>Generated Images</h3>
-        {generatedImages.map((imageUrl, index) => (
-          <img
-            key={index}
-            src={imageUrl}
-            alt="Generated"
-            onClick={() => setSelectedImage(imageUrl)}
-          />
-        ))}
-      </div>
-
-      <button onClick={() => navigate('/')} className="back-button">
-        Back to Image Generator
-      </button>
     </div>
   );
 }
