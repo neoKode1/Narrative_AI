@@ -1,0 +1,19 @@
+.navbar {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+select {
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: #221524;
+  border: none;
+  cursor: pointer;
+  color: blanchedalmond;
+}
+
+select:hover {
+  background-color: #21a1f1;
+}

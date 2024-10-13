@@ -7,7 +7,7 @@
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  background-image: url('../public/billi.png'); /* Make sure the image path is correct */
+  background-image: url('../public/billi.png'); /* Ensure correct path */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -20,28 +20,28 @@
   margin-bottom: 50px;  
 }
 
-h3{
+h3 {
   color: white;
 }
 
 .welcome-message h1 {
-  font-size: 10rem;
+  font-size: 8rem; /* Reduced for better responsiveness */
   font-weight: bold;
-  margin-top: 200px;
+  margin-top: 150px;
   margin-bottom: 10px;
 }
 
 .welcome-message p {
-  font-size: 4rem;
+  font-size: 3rem; /* Reduced for better responsiveness */
   font-weight: 400;
   margin-top: 10px;
 }
 
-/* Styling for the input fields */
+/* Styling for input fields */
 input[type="text"], input[type="file"] {
   padding: 12px 20px;
   width: 80%;
-  max-width: 500px;
+  max-width: 400px;
   font-size: 1.2rem;
   margin-top: 20px;
   border-radius: 8px;
@@ -56,12 +56,12 @@ input[type="text"]::placeholder {
   font-size: 1rem;
 }
 
-/* Styling for the buttons */
+/* Styling for buttons */
 button {
   padding: 12px 20px;
   font-size: 1.2rem;
   color: white;
-  background-color: #221524;
+  background-color: #16293c;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -80,16 +80,17 @@ button:active {
   transform: translateY(0px);
 }
 
-/* Styling for the reference image upload */
+/* Reference Image Upload */
 .reference-upload {
-  margin-top: 30px;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  gap: 15px; /* Add some space between file input and text input */
+  margin-top: 30px;
 }
 
 .reference-img {
-  max-width: 150px;
+  max-width: 200px;
   margin-top: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -106,7 +107,7 @@ button:active {
 }
 
 /* Styling for generated images */
-img {
+.grid img {
   max-width: 100%;
   margin-top: 1rem;
   border-radius: 8px;
@@ -114,6 +115,19 @@ img {
   transition: transform 0.3s ease;
 }
 
-img:hover {
-  transform: scale(1.05);
+.grid img:hover {
+  transform: scale(1.05); /* Slight zoom effect on hover */
+}
+
+/* Responsive input and button layout */
+@media (max-width: 768px) {
+  .reference-upload {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  input[type="text"], input[type="file"], button {
+    width: 100%;
+    max-width: none;
+  }
 }
