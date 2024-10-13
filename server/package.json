@@ -9,11 +9,16 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.670.0",
     "@runwayml/sdk": "^1.0.0",
+    "aws-sdk": "^2.1691.0",
+    "axios": "^1.7.7",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "replicate": "^0.2.0"
+    "multer": "^1.4.5-lts.1",
+    "replicate": "^0.2.0",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
