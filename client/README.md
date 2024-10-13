@@ -1,70 +1,89 @@
-# Getting Started with Create React App
+Narrative AI
+Narrative AI is a web application that allows users to generate images, animate them, and add voice to create a complete narrative. It utilizes the Hugging Face API to generate images based on user input prompts and integrates with a backend server for handling requests.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Getting Started
+This project was bootstrapped with Create React App for the frontend and an Express server for the backend.
 
-## Available Scripts
+Prerequisites
+Node.js installed on your machine.
+A Hugging Face API key for image generation.
+A .env file in your server folder with the following content:
+plaintext
+Copy code
+REPLICATE_API_TOKEN=your_replicate_api_token_here
+HUGGING_FACE_API_KEY=your_hugging_face_api_key_here
+PORT=5000
+Available Scripts
+In the project directory, you can run the following commands for both frontend and backend:
 
-In the project directory, you can run:
+Frontend (Client)
+cd client
+Run one of the following commands:
+npm start
+Runs the app in the development mode.
+Open http://localhost:3000 to view it in your browser.
 
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
+The page will reload when you make changes.
 You may also see any lint errors in the console.
 
-### `npm test`
+npm test
+Launches the test runner in the interactive watch mode.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
+npm run build
+Builds the app for production to the build folder.
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Backend (Server)
+cd server
+Run one of the following commands:
+npm start
+Starts the Express server at http://localhost:5000.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+npm run dev
+Starts the server in development mode using Nodemon to automatically restart on file changes.
 
-### `npm run eject`
+Usage
+Navigate to the frontend at http://localhost:3000.
+Enter a prompt in the input field and click "Generate Image" to create an AI-generated image.
+The image will appear on the page after successful generation.
+Project Structure
+bash
+Copy code
+narrative-ai/
+│
+├── client/                  # Frontend React app
+│   ├── public/              # Static public assets (favicon, HTML, etc.)
+│   ├── src/                 # Source code for React app
+│   ├── .env                 # Environment variables for the client
+│   └── ...
+│
+├── server/                  # Backend Express app
+│   ├── routes/              # API routes for image and video generation
+│   ├── services/            # API service handlers for Hugging Face and RunwayML
+│   ├── .env                 # Environment variables for the server (not committed to git)
+│   ├── index.js             # Entry point for the server
+│   └── ...
+│
+└── .gitignore               # Files to ignore in Git
+Environment Setup
+Make sure you have two .env files for this project:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Client-side (client/.env):
+This file can include environment-specific variables for the React app.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Server-side (server/.env):
+This file contains sensitive environment variables, such as API keys and the port. Ensure this file is added to .gitignore to prevent accidental sharing of secrets.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Deployment
+Client:
+After running npm run build in the client folder, deploy the contents of the build folder to your preferred hosting provider (e.g., Netlify, Vercel, or GitHub Pages).
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Server:
+Deploy the server folder to a hosting provider that supports Node.js (e.g., Heroku, AWS, or DigitalOcean). Make sure to set the environment variables (e.g., the API keys) in the provider's dashboard.
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Learn More
+React: To learn React, check out the React documentation.
+Create React App: Learn more about the CRA setup here.
+Hugging Face: Learn more about Hugging Face APIs.
+Contributing
+Feel free to contribute to the project by opening issues or pull requests on the GitHub repository.

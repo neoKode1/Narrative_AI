@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function ImageGenerator({ onImageGenerated }) {
+function ImageGenerator({ onImageGenerated, resetPrompt }) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +16,9 @@ function ImageGenerator({ onImageGenerated }) {
       });
 
       const data = await response.json();
-      onImageGenerated(data.imageUrl); // Pass the generated image URL back to the parent
+      onImageGenerated(data.imageUrl); // Pass the generated image URL back to the parent component
+      setPrompt(''); // Clear the input field after generating an image
+      resetPrompt();  // Call the resetPrompt function from App to update the state
     } catch (error) {
       console.error('Error generating image:', error);
     } finally {
@@ -26,7 +28,6 @@ function ImageGenerator({ onImageGenerated }) {
 
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-semibold mb-4">Generate Image</h2>
       <form onSubmit={handleSubmit} className="mb-4">
         <input
           type="text"
@@ -47,27 +48,4 @@ function ImageGenerator({ onImageGenerated }) {
   );
 }
 
-function App() {
-  const [imageUrl, setImageUrl] = useState(null);
-
-  const handleImageGenerated = (url) => {
-    setImageUrl(url);
-  };
-
-  return (
-    <div className="App">
-      <ImageGenerator onImageGenerated={handleImageGenerated} />
-
-      {imageUrl && (
-        <div>
-          <h2>Generated Image:</h2>
-          {/* Standard img tag for the generated image */}
-          <img src={imageUrl} alt="Generated artwork" className="w-full h-auto rounded-md mt-4" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Export the main App component instead of ImageGenerator
-export default App;
+export default ImageGenerator;

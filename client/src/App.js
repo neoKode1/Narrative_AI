@@ -4,6 +4,7 @@ import ImageGenerator from './components/ImageGenerator';
 
 function App() {
   const [generatedImages, setGeneratedImages] = useState([]);
+  const [referenceImage, setReferenceImage] = useState(null);
 
   // Retrieve images from localStorage on component mount
   useEffect(() => {
@@ -11,25 +12,56 @@ function App() {
     setGeneratedImages(storedImages);
   }, []);
 
+  // Handle reference image upload
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file); // Generates a preview URL
+      setReferenceImage(imageUrl);
+    }
+  };
+
   // Store image URLs in state and localStorage
   function storeImageData(imageUrl) {
-    console.log(imageUrl); // Check if the correct image URL is logged
-    const updatedImages = [...generatedImages, imageUrl];
-    setGeneratedImages(updatedImages);
-    localStorage.setItem('imageData', JSON.stringify(updatedImages));
+    if (imageUrl) {
+      const updatedImages = [...generatedImages, imageUrl];
+      setGeneratedImages(updatedImages); // Update state with new images
+      localStorage.setItem('imageData', JSON.stringify(updatedImages)); // Store in localStorage
+    }
+  }
+
+  // Function to reset the input field
+  function resetPrompt() {
+    // Clear any prompt-related logic if needed
   }
 
   return (
     <div className="App">
-      <h1>Narrative AI</h1>
-      <h2>Create an image, animate it, and add voice to create your narrative.</h2>
+      {/* Welcome message */}
+      <div className="welcome-message">
+        <h1>Narrative AI</h1>
+        <p>Create an image, animate it, and add voice to create your narrative.</p>
+      </div>
 
-      {/* Image Generation Section */}
-      <ImageGenerator onImageGenerated={storeImageData} />
+      {/* Reference Image Upload */}
+      <div className="reference-upload">
+        <h3>Upload a reference image</h3>
+        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        {referenceImage && (
+          <img src={referenceImage} alt="Reference" className="reference-img" />
+        )}
+      </div>
 
-      {/* Display generated images */}
+      {/* Image Generation Section with Reset Function */}
+      <ImageGenerator
+        onImageGenerated={storeImageData}
+        resetPrompt={resetPrompt}
+        referenceImage={referenceImage}
+      />
+
+      {/* Display generated images dynamically after each generation */}
       <div className="grid">
-        {generatedImages.map((imageUrl, index) => (
+        {generatedImages.length > 0 && generatedImages.map((imageUrl, index) => (
           <img
             key={index}
             src={imageUrl}

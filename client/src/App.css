@@ -7,51 +7,92 @@
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  background-image: url('../public/billi.png'); /* Ensure correct path to your image */
+  background-image: url('../public/billi.png'); /* Make sure the image path is correct */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-/* Heading Styles */
-h1 {
-  font-size: 3rem;
+/* Styling for the welcome message */
+.welcome-message {
   color: white;
+  text-align: center;
+  margin-bottom: 50px;  
+}
+
+h3{
+  color: white;
+}
+
+.welcome-message h1 {
+  font-size: 10rem;
   font-weight: bold;
+  margin-top: 200px;
+  margin-bottom: 10px;
 }
 
-h2 {
-  font-size: 1.5rem;
-  color: white;
-  margin-bottom: 2rem;
+.welcome-message p {
+  font-size: 4rem;
+  font-weight: 400;
+  margin-top: 10px;
 }
 
-/* Prompt input field styling */
-.prompt-input {
-  width: 300px;
-  padding: 1rem;
-  margin-right: 1rem;
+/* Styling for the input fields */
+input[type="text"], input[type="file"] {
+  padding: 12px 20px;
+  width: 80%;
+  max-width: 500px;
+  font-size: 1.2rem;
+  margin-top: 20px;
   border-radius: 8px;
-  border: 1px solid #ddd;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  outline: none;
   background-color: rgba(255, 255, 255, 0.9);
-  color: black;
 }
 
-/* Button styling */
-.generate-button,
-.navigate-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #61dafb;
+input[type="text"]::placeholder {
+  color: #999;
+  font-size: 1rem;
+}
+
+/* Styling for the buttons */
+button {
+  padding: 12px 20px;
+  font-size: 1.2rem;
+  color: white;
+  background-color: #221524;
   border: none;
   border-radius: 8px;
-  color: white;
   cursor: pointer;
-  margin-top: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-top: 20px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.generate-button:hover,
-.navigate-button:hover {
-  background-color: #1f4037;
+button:hover {
+  background-color: #0056b3;
+  transform: translateY(-3px);
+}
+
+button:active {
+  background-color: #004494;
+  transform: translateY(0px);
+}
+
+/* Styling for the reference image upload */
+.reference-upload {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reference-img {
+  max-width: 150px;
+  margin-top: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Grid layout for generated images */
@@ -75,53 +116,4 @@ img {
 
 img:hover {
   transform: scale(1.05);
-}
-
-/* Side panel for image selection */
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  margin-top: 20px;
-  max-width: 300px;
-}
-
-/* Thumbnail image in side panel */
-.side-panel img {
-  max-width: 100px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: box-shadow 0.3s ease;
-}
-
-.side-panel img:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-/* Reference image upload section */
-.reference-upload {
-  margin-top: 20px;
-}
-
-.reference-img {
-  max-width: 150px;
-  margin-top: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Button styling for action buttons */
-button {
-  background-color: #070708;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 20px;
-}
-
-button:hover {
-  background-color: #333436;
 }
