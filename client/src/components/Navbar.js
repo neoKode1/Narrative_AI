@@ -7,7 +7,7 @@ function Navbar() {
       <select onChange={(e) => window.location.href = e.target.value}>
         <option value="/">Home (Image Generator)</option>
         <option value="/VideoGenerator">Video Generator</option>
-        <option value="/text-to-voice">Text to Voice</option>
+        <option value="/AddVoiceAudio">Text to Voice</option>
       </select>
     </div>
   );

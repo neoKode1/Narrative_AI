@@ -2,18 +2,15 @@ import axios from 'axios';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 
-
- // For generating unique filenames
-
 // Hugging Face API URL for Flux 1 model
 const API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev";
 
-// Authorization token (replace with your actual token)
+// Authorization token
 const headers = {
-  "Authorization": "Bearer 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" // Your Hugging Face token here
+  "Authorization": "Bearer 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" // Use environment variable for token
 };
 
-// Initialize AWS S3 client with credentials from environment variables
+// Initialize AWS S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -37,8 +34,8 @@ export const generateImage = async (prompt) => {
     // Log the response status for debugging purposes
     console.log("Response status from Hugging Face API:", response.status);
 
-    // Get the image data and MIME type
-    const imageBuffer = response.data;
+    // Get the image data as a Buffer
+    const imageBuffer = Buffer.from(response.data);  // Convert to Buffer
     const contentType = response.headers['content-type']; // Get content type (like image/png or image/jpeg)
 
     // Generate a unique image name for S3
@@ -65,7 +62,7 @@ export const generateImage = async (prompt) => {
 
   } catch (error) {
     console.error('Error generating or uploading image:', error.message);
-    console.error('Error response:', error.response ? error.response.data : 'undefined');
+    console.error('Full error response:', error.response ? error.response.data.toString() : 'No response data');
     throw new Error('Failed to generate image');
   }
 };

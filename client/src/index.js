@@ -13,7 +13,7 @@ root.render(
       <Route path="/" element={<App />} />
       <Route path="/VideoGenerator" element={<VideoGenerator />} />
       {/* Placeholder for future TextToVoice component */}
-      <Route path="/text-to-voice" element={<div>Text to Voice Page</div>} />
+      <Route path="/AddVoiceAudio" element={<div>Text to Voice Page</div>} />
     </Routes>
   </Router>
 );
