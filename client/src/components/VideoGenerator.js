@@ -20,26 +20,46 @@ function VideoGenerator() {
       console.error('No image selected.');
       return;
     }
-
+  
     setLoading(true);
     try {
-      // Create FormData to send the image file and the prompt text
-      const formData = new FormData();
-      formData.append('image', selectedImage); // Image file
-      formData.append('promptText', promptText); // Prompt
-
-      // Send image to backend for upload to S3 and video generation
+      // Make sure you're sending a valid image URL and prompt in JSON format
       const response = await fetch('http://localhost:5000/api/video/generate', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: selectedImage,  // This should be the URL of the image
+          animationPrompt: promptText,  // This should be your animation prompt
+        }),
       });
-
+  
       const data = await response.json();
-      setVideoUrl(data.videoUrl);
+      if (response.ok) {
+        setVideoUrl(data.videoUrl);
+      } else {
+        console.error('Backend error:', data.error);
+      }
     } catch (error) {
       console.error('Error generating video:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  
+
+  const renderImagePreview = () => {
+    // Check if `selectedImage` is a File/Blob or URL string
+    if (selectedImage instanceof File || selectedImage instanceof Blob) {
+      // If it's a File or Blob, use URL.createObjectURL
+      return <img src={URL.createObjectURL(selectedImage)} alt="Selected" style={{ width: '300px', height: 'auto' }} />;
+    } else if (typeof selectedImage === 'string') {
+      // If it's a URL string, use it directly
+      return <img src={selectedImage} alt="Selected" style={{ width: '300px', height: 'auto' }} />;
+    } else {
+      return <p>No valid image selected</p>;
     }
   };
 
@@ -54,9 +74,8 @@ function VideoGenerator() {
       <div className="content">
         <h1>Video Generator</h1>
 
-        {selectedImage && (
-          <img src={URL.createObjectURL(selectedImage)} alt="Selected" style={{ width: '300px', height: 'auto' }} />
-        )}
+        {/* Render image preview */}
+        {selectedImage && renderImagePreview()}
 
         <input
           type="text"

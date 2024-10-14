@@ -1,27 +1,18 @@
 import express from 'express';
-import multer from 'multer'; // For handling file uploads
-import { uploadImage } from '../services/s3Service.js'; // Import the S3 upload service
-import { generateVideo } from '../services/runwayService.js'; // Import the video generation service
+import { generateVideo } from '../services/runwayService.js'; // Video generation service
 
 const router = express.Router();
-const upload = multer(); // Multer for handling multipart/form-data
 
-// Route to handle image upload and video generation
-router.post('/generate', upload.single('image'), async (req, res) => {
-  const { animationPrompt } = req.body; // Get the animation prompt
-  const file = req.file; // Get the uploaded image file
+// Route to handle video generation from image URL and prompt
+router.post('/generate', async (req, res) => {
+  const { imageUrl, animationPrompt } = req.body; // Extract image URL and animation prompt from JSON request
 
-  if (!file) {
-    return res.status(400).json({ error: 'No image file provided' });
+  if (!imageUrl || !animationPrompt) {
+    return res.status(400).json({ error: 'Missing imageUrl or animationPrompt' });
   }
 
   try {
-    // Upload image to S3 and get the public URL
-    const imageUrl = await uploadImage(file);
-
-    console.log('Image uploaded to S3:', imageUrl); // Debugging log
-
-    // Generate video using the S3 image URL
+    // Generate video using the image URL and animation prompt
     const videoUrl = await generateVideo(imageUrl, animationPrompt);
 
     console.log('Video generated at:', videoUrl); // Debugging log

@@ -16,21 +16,38 @@ function ImageGenerator({ onImageGenerated, resetPrompt }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+    
+    if (!prompt || typeof prompt !== 'string') {
+      alert('Please enter a valid prompt');
+      setLoading(false);
+      return;
+    }
+  
+    if (!imageFile) {
+      alert('Please upload an image');
+      setLoading(false);
+      return;
+    }
+  
     // Prepare FormData to send prompt and image
     const formData = new FormData();
-    formData.append('prompt', prompt);
+    formData.append('prompt', prompt);  // Add prompt as a string
     formData.append('image', imageFile); // Add the image file to the form data
-
+  
     try {
       // Send request to backend with prompt and image
       const response = await fetch('http://localhost:5000/api/image/generate', {
         method: 'POST',
         body: formData, // FormData automatically sets the correct content type for multipart data
       });
-
+  
       const data = await response.json();
-      onImageGenerated(data.imageUrl); // Pass the generated image URL back to the parent component
+      if (response.ok) {
+        onImageGenerated(data.imageUrl); // Pass the generated image URL back to the parent component
+      } else {
+        console.error('Backend error:', data.error);
+      }
+  
       setPrompt(''); // Clear the prompt input
       setImageFile(null); // Clear the image input
       resetPrompt(); // Call the resetPrompt function from App to update the state
@@ -40,6 +57,8 @@ function ImageGenerator({ onImageGenerated, resetPrompt }) {
       setLoading(false);
     }
   };
+  
+  
 
   return (
     <div className="mb-8">
