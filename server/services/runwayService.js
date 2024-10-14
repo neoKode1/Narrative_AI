@@ -1,43 +1,71 @@
 import RunwayML from '@runwayml/sdk';
 import 'dotenv/config';
+import fetch from 'node-fetch';
+import { uploadToS3 } from './s3Service.js';
 
 const client = new RunwayML({
-  apiKey: process.env.RUNWAYML_API_SECRET, // Accessing the API key from .env
+  apiKey: process.env.RUNWAYML_API_SECRET,
 });
 
-
 export async function generateVideo(imageUrl, animationPrompt) {
+  console.log('Initiating video generation with:', { imageUrl, animationPrompt });
   try {
-    // Ensure imageUrl is a valid HTTPS URL
-    if (!imageUrl.startsWith('https://')) {
-      throw new Error('Invalid image URL. Ensure it is a valid HTTPS URL.');
+    let httpsImageUrl = imageUrl;
+
+    // Check if the URL is a localhost URL
+    if (imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1')) {
+      console.log('Local image detected. Fetching and uploading to S3...');
+      const response = await fetch(imageUrl);
+      const imageBuffer = await response.buffer();
+      httpsImageUrl = await uploadToS3(imageBuffer, 'image/png', 'generated-image.png');
+    } else {
+      // Convert HTTP URL to HTTPS if necessary
+      httpsImageUrl = imageUrl.replace('http:', 'https:');
     }
 
-    // Send a request to RunwayML API
+    console.log('Using HTTPS image URL:', httpsImageUrl);
+
+    console.log('Creating image-to-video task...');
     const imageToVideo = await client.imageToVideo.create({
-      model: 'gen3a_turbo',               // Use the gen3a_turbo model
-      promptImage: imageUrl,              // The image URL must be HTTPS
-      promptText: animationPrompt,        // The prompt text for animation
-      duration: 10,                       // Optional: You can change duration if needed (5 or 10)
-      ratio: "16:9",                      // Optional: Set the aspect ratio (16:9 or 9:16)
-      watermark: false,                   // Optional: Set to true if you want watermark
+      model: 'gen3a_turbo',
+      promptImage: httpsImageUrl,
+      promptText: animationPrompt,
+      duration: 10,
+      ratio: "16:9",
+      watermark: false,
     });
 
     const taskId = imageToVideo.id;
+    console.log('Task created with ID:', taskId);
 
     let task;
     do {
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Poll every 10 seconds
+      await new Promise(resolve => setTimeout(resolve, 10000));
       task = await client.tasks.retrieve(taskId);
+      console.log('Task status:', task.status);
     } while (!['SUCCEEDED', 'FAILED'].includes(task.status));
 
     if (task.status === 'FAILED') {
-      throw new Error('Video generation failed.');
+      console.error('Task failed:', task.error);
+      throw new Error(`Video generation failed: ${task.error}`);
     }
 
-    return task.output.url; // Return the generated video URL
+    console.log('Complete task object:', JSON.stringify(task, null, 2));
+
+    let videoUrl = null;
+    if (Array.isArray(task.output) && task.output.length > 0) {
+      videoUrl = task.output[0];
+    }
+
+    if (!videoUrl) {
+      console.error('Video URL not found in task output');
+      throw new Error('Video URL not found in task output');
+    }
+
+    console.log('Video generated successfully. URL:', videoUrl);
+    return videoUrl;
   } catch (error) {
-    console.error('Error generating video:', error);
-    throw new Error('Failed to generate video');
+    console.error('Detailed error in generateVideo:', error);
+    throw error;
   }
 }

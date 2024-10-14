@@ -1,27 +1,26 @@
 import express from 'express';
-import { generateVideo } from '../services/runwayService.js'; // Video generation service
+import { generateVideo } from '../services/runwayService.js';
 
 const router = express.Router();
 
-// Route to handle video generation from image URL and prompt
 router.post('/generate', async (req, res) => {
-  const { imageUrl, animationPrompt } = req.body; // Extract image URL and animation prompt from JSON request
+  console.log('Received video generation request:', req.body);
+  const { imageUrl, animationPrompt } = req.body;
 
   if (!imageUrl || !animationPrompt) {
+    console.log('Missing required parameters');
     return res.status(400).json({ error: 'Missing imageUrl or animationPrompt' });
   }
 
   try {
-    // Generate video using the image URL and animation prompt
+    console.log('Calling generateVideo function...');
     const videoUrl = await generateVideo(imageUrl, animationPrompt);
 
-    console.log('Video generated at:', videoUrl); // Debugging log
-
-    // Respond with the generated video URL
+    console.log('Video generated successfully:', videoUrl);
     res.status(200).json({ videoUrl });
   } catch (error) {
-    console.error('Error generating video:', error);
-    res.status(500).json({ error: 'Error generating video' });
+    console.error('Detailed error in video generation route:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
