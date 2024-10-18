@@ -1,68 +1,58 @@
 import axios from 'axios';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import fs from 'fs/promises';
+import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
 
-// Hugging Face API URL for Flux 1 model
-const API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev";
+dotenv.config();
 
-// Authorization token
+const API_URL = "http://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev";
+const API_TOKEN = process.env.HUGGING_FACE_API_TOKEN;
+
+if (!API_TOKEN) {
+  console.error('HUGGING_FACE_API_TOKEN is not set in the environment variables');
+  throw new Error('Hugging Face API token is missing');
+}
+
+console.log('Hugging Face API Token:', API_TOKEN ? 'Token is set' : 'Token is not set');
+
 const headers = {
-  "Authorization": "Bearer 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" // Use environment variable for token
+  "Authorization": `Bearer ${API_TOKEN}`
 };
-
-// Initialize AWS S3 client
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
 
 export const generateImage = async (prompt) => {
   try {
-    // Send POST request to Hugging Face API with the prompt
+    console.log('Attempting to generate image with prompt:', prompt);
+    console.log('API URL:', API_URL);
+    console.log('Using headers:', { ...headers, Authorization: 'Bearer [REDACTED]' });
+    
+    console.log('Sending request to Hugging Face API...');
     const response = await axios.post(
       API_URL,
-      { "inputs": prompt },  // Ensure the prompt is sent as a plain string
+      { "inputs": prompt },
       {
         headers: headers,
-        responseType: 'arraybuffer',  // Expect the response as binary data (an image)
+        responseType: 'arraybuffer',
       }
     );
 
-    // Log the response status for debugging purposes
-    console.log("Response status from Hugging Face API:", response.status);
+    console.log("Response received from Hugging Face API");
+    console.log("Response status:", response.status);
+    console.log("Response headers:", response.headers);
 
-    // Get the image data as a Buffer
-    const imageBuffer = Buffer.from(response.data);  // Convert to Buffer
-    const contentType = response.headers['content-type']; // Get content type (like image/png or image/jpeg)
-
-    // Generate a unique image name for S3
+    const imageBuffer = Buffer.from(response.data);
     const imageName = `${uuidv4()}-generated-image.png`;
+    const imagePath = path.join(process.cwd(), 'public', imageName);
 
-    // Define the S3 upload parameters
-    const uploadParams = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME, // S3 bucket name
-      Key: imageName,                         // Unique file name
-      Body: imageBuffer,                      // File content (buffer)
-      ContentType: contentType,               // MIME type of the file
-      ACL: 'public-read',                     // Make the file publicly readable
-    };
+    await fs.writeFile(imagePath, imageBuffer);
 
-    // Upload the image buffer to S3
-    const command = new PutObjectCommand(uploadParams);
-    await s3.send(command);
+    const imageUrl = `/public/${imageName}`;
+    console.log('Image successfully saved to:', imageUrl);
 
-    // Generate the S3 public URL
-    const s3ImageUrl = `https://${uploadParams.Bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
-
-    // Return the S3 image URL
-    return s3ImageUrl;
+    return imageUrl;
 
   } catch (error) {
-    console.error('Error generating or uploading image:', error.message);
-    console.error('Full error response:', error.response ? error.response.data.toString() : 'No response data');
-    throw new Error('Failed to generate image');
+    console.error('Error in generateImage:', error);
+    throw new Error('Failed to generate image: ' + error.message);
   }
 };

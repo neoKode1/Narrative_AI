@@ -1,73 +1,39 @@
-/* Full-page video background */
-.video-generator {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Background video styling */
-.background-video {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-  
-}
-
-/* Overlay for shading */
-.background-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(207, 128, 128, 0.39); /* Adjust transparency (0.5 is 50% black) */
-  z-index: 0; /* Make sure it's above the video but below other content */
-}
-
-
-/* Main content container */
-.content {
-  z-index: 1;
-  color: white;
-  text-align: center;
-  padding: 2rem;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 10px;
-}
-
-/* Input field styling */
 .prompt-input {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 5px;
-  border: none;
-  font-size: 1rem;
-  width: 80%;
-  max-width: 400px;
-  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 600px;
+  min-height: 150px;
+  padding: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
 }
 
-/* Button styling */
-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #61dafb;
-  border: none;
-  border-radius: 8px;
+.prompt-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.character-count {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.generate-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
   color: white;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 1rem;
 }
 
-button:disabled {
-  background-color: gray;
-}
-
-button:hover:not(:disabled) {
-  background-color: #21a1f1;
+.generate-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }

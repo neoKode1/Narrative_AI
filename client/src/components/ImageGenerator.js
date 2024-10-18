@@ -1,93 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './ImageGenerator.css';
 
-function ImageGenerator({ onImageGenerated, resetPrompt }) {
-  const [prompt, setPrompt] = useState(''); // Prompt input
-  const [imageFile, setImageFile] = useState(null); // Image file input
-  const [loading, setLoading] = useState(false); // Loading state
+function ImageGenerator() {
+  const [generatedImages, setGeneratedImages] = useState([]);
+  const [prompt, setPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Handle image file selection
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-    }
+  useEffect(() => {
+    const storedImages = JSON.parse(localStorage.getItem('imageData')) || [];
+    setGeneratedImages(storedImages);
+  }, []);
+
+  const handleImageClick = (imageUrl) => {
+    navigate('/VideoGenerator', { state: { selectedImage: imageUrl } });
   };
 
-  const handleSubmit = async (e) => {
+  const handleGenerateImage = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    if (!prompt || typeof prompt !== 'string') {
-      alert('Please enter a valid prompt');
+    setError(null);
+
+    if (!prompt) {
+      setError("Please enter a prompt.");
       setLoading(false);
       return;
     }
-  
-    if (!imageFile) {
-      alert('Please upload an image');
-      setLoading(false);
-      return;
-    }
-  
-    // Prepare FormData to send prompt and image
-    const formData = new FormData();
-    formData.append('prompt', prompt);  // Add prompt as a string
-    formData.append('image', imageFile); // Add the image file to the form data
-  
+
     try {
-      // Send request to backend with prompt and image
       const response = await fetch('http://localhost:5000/api/image/generate', {
         method: 'POST',
-        body: formData, // FormData automatically sets the correct content type for multipart data
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
       });
-  
-      const data = await response.json();
+
       if (response.ok) {
-        onImageGenerated(data.imageUrl); // Pass the generated image URL back to the parent component
+        const data = await response.json();
+        const generatedImageUrl = `http://localhost:5000${data.imageUrl}`;
+
+        const updatedImages = [...generatedImages, generatedImageUrl];
+        setGeneratedImages(updatedImages);
+        localStorage.setItem('imageData', JSON.stringify(updatedImages));
+
+        setPrompt('');
       } else {
-        console.error('Backend error:', data.error);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate image');
       }
-  
-      setPrompt(''); // Clear the prompt input
-      setImageFile(null); // Clear the image input
-      resetPrompt(); // Call the resetPrompt function from App to update the state
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Error:', error);
+      setError(error.message || 'An error occurred while generating the image');
     } finally {
       setLoading(false);
     }
   };
-  
-  
 
   return (
-    <div className="mb-8">
-      <form onSubmit={handleSubmit} className="mb-4">
-        {/* Input for prompt */}
-        <input
-          type="text"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter a prompt"
-          className="px-4 py-2 border rounded-md w-full mb-4"
-        />
+    <div className="image-generator">
+      {/* Add Video Background */}
+      <video autoPlay loop muted className="background-video">
+        <source src="/madclownvid.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
 
-        {/* Input for image file */}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="mb-4"
-        />
+      <div className="content">
+        <h2>Image Generator</h2>
+        <form onSubmit={handleGenerateImage} className="image-upload-form">
+          <div className="input-group">
+            <textarea
+              id="prompt-input"
+              name="prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter a detailed prompt for image generation"
+              className="prompt-input"
+              rows="4"
+              required
+            />
+            <button type="submit" id="generate-button" className="generate-btn" disabled={loading}>
+              {loading ? 'Generating...' : 'Generate Image'}
+            </button>
+          </div>
+        </form>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md"
-        >
-          {loading ? 'Generating...' : 'Generate Image'}
-        </button>
-      </form>
+        {error && <p className="error-message">{error}</p>}
+
+        <div className="grid">
+          {generatedImages.length > 0 && generatedImages.map((imageUrl, index) => (
+            <img
+              key={index}
+              src={imageUrl}
+              alt={`Generated ${index + 1}`}
+              onClick={() => handleImageClick(imageUrl)}
+              onError={(e) => {e.target.src = 'http://localhost:5000/public/placeholder-image.png'; e.target.alt = 'Image load error';}}
+              className="generated-img"
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

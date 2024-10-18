@@ -1,26 +1,42 @@
 import express from 'express';
 import { generateVideo } from '../services/runwayService.js';
+import RunwayML from '@runwayml/sdk';
 
 const router = express.Router();
 
 router.post('/generate', async (req, res) => {
-  console.log('Received video generation request:', req.body);
-  const { imageUrl, animationPrompt } = req.body;
-
-  if (!imageUrl || !animationPrompt) {
-    console.log('Missing required parameters');
-    return res.status(400).json({ error: 'Missing imageUrl or animationPrompt' });
-  }
-
   try {
+    const { imageUrl, animationPrompt } = req.body;
+    console.log('Received video generation request:', { imageUrl, animationPrompt });
+
+    if (!imageUrl || !animationPrompt) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
     console.log('Calling generateVideo function...');
     const videoUrl = await generateVideo(imageUrl, animationPrompt);
-
-    console.log('Video generated successfully:', videoUrl);
-    res.status(200).json({ videoUrl });
+    
+    res.json({ videoUrl });
   } catch (error) {
     console.error('Detailed error in video generation route:', error);
-    res.status(500).json({ error: error.message });
+    let errorResponse = {
+      error: 'Failed to generate video',
+      message: error.message,
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      errorResponse.stack = error.stack;
+    }
+
+    if (error instanceof RunwayML.APIError) {
+      errorResponse.details = {
+        status: error.status,
+        name: error.name,
+        headers: error.headers,
+      };
+    }
+
+    res.status(500).json(errorResponse);
   }
 });
 

@@ -1,38 +1,69 @@
 import express from 'express';
-import multer from 'multer'; // Middleware for handling multipart/form-data
-import { generateImage } from '../services/fluxModelService.js'; // Function to generate image
-import { uploadToS3 } from '../services/s3Service.js'; // Function to upload image to S3
+import { generateImage } from '../services/fluxModelService.js';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Set up multer for file handling (image upload)
-const upload = multer({ storage: multer.memoryStorage() }); // Store images in memory as buffer
-
-router.post('/generate', upload.single('image'), async (req, res) => {
-  const { prompt } = req.body;
-
+router.post('/generate', async (req, res) => {
   try {
-    // Ensure prompt is valid
-    if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({ error: 'Prompt must be a valid string.' });
+    const {
+      prompt,
+      seed,
+      image,
+      go_fast = true,
+      guidance = 3,
+      megapixels = "1",
+      num_outputs = 1,
+      aspect_ratio = "1:1",
+      output_format = "webp",
+      output_quality = 80,
+      prompt_strength = 0.8,
+      num_inference_steps = 28,
+      disable_safety_checker = false
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Missing prompt parameter' });
     }
 
-    // Ensure image file is uploaded
-    if (!req.file) {
-      return res.status(400).json({ error: 'Image file is required.' });
+    const imageData = await generateImage({
+      prompt,
+      seed,
+      image,
+      go_fast,
+      guidance,
+      megapixels,
+      num_outputs,
+      aspect_ratio,
+      output_format,
+      output_quality,
+      prompt_strength,
+      num_inference_steps,
+      disable_safety_checker
+    });
+
+    const images = [];
+    for (let i = 0; i < imageData.images.length; i++) {
+      const base64Data = imageData.images[i].replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `${uuidv4()}-generated-image.${output_format}`;
+      const filepath = path.join(__dirname, '..', 'public', filename);
+      
+      await fs.writeFile(filepath, buffer);
+      
+      images.push(`http://localhost:5000/public/${filename}`);
     }
 
-    // Generate image based on the prompt
-    const generatedImageBuffer = await generateImage(prompt);
-
-    // Upload the generated image buffer to S3
-    const s3ImageUrl = await uploadImage(generatedImageBuffer, req.file.mimetype, `${Date.now()}-generated-image.png`);
-
-    // Return the URL of the uploaded image
-    res.status(200).json({ imageUrl: s3ImageUrl });
+    res.json({ images });
   } catch (error) {
-    console.error('Error generating and uploading image:', error);
-    res.status(500).json({ error: 'Failed to generate and upload image.' });
+    console.error('Error in image generation route:', error);
+    res.status(500).json({ error: 'Failed to generate image', details: error.message });
   }
 });
 
