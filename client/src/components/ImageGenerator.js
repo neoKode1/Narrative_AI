@@ -10,6 +10,8 @@ const ImageGenerator = () => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [referenceImage, setReferenceImage] = useState(null);
+  const [referencePreview, setReferencePreview] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,6 +24,33 @@ const ImageGenerator = () => {
   const handleImageClick = (imageUrl) => {
     console.log('Image clicked:', imageUrl);
     navigate('/VideoGenerator', { state: { selectedImage: imageUrl } });
+  };
+
+  const handleReferenceUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file (JPG, PNG, WEBP)');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError('Image size should be less than 5MB');
+        return;
+      }
+
+      setReferenceImage(file);
+      const previewUrl = URL.createObjectURL(file);
+      setReferencePreview(previewUrl);
+      setError(null);
+    }
+  };
+
+  const removeReference = () => {
+    setReferenceImage(null);
+    if (referencePreview) {
+      URL.revokeObjectURL(referencePreview);
+    }
+    setReferencePreview(null);
   };
 
   const generateImage = async (e) => {
@@ -39,12 +68,15 @@ const ImageGenerator = () => {
 
     try {
       console.log('Sending request to backend');
+      const formData = new FormData();
+      formData.append('prompt', prompt.trim());
+      if (referenceImage) {
+        formData.append('referenceImage', referenceImage);
+      }
+
       const response = await fetch('/api/image/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: formData,
       });
 
       console.log('Response received:', {
@@ -85,6 +117,9 @@ const ImageGenerator = () => {
         console.log('Images saved to localStorage');
 
         setPrompt('');
+        if (referenceImage) {
+          removeReference();
+        }
       } else {
         console.error('No image URL in response:', data);
         throw new Error('No image URL received from server');
@@ -128,6 +163,33 @@ const ImageGenerator = () => {
               rows="4"
               required
             />
+
+            <div className="reference-upload-section">
+              <label htmlFor="reference-upload" className="reference-upload-label">
+                Upload Reference Image
+                <input
+                  type="file"
+                  id="reference-upload"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleReferenceUpload}
+                  className="reference-upload-input"
+                />
+              </label>
+              
+              {referencePreview && (
+                <div className="reference-preview">
+                  <img src={referencePreview} alt="Reference" className="reference-image" />
+                  <button
+                    type="button"
+                    onClick={removeReference}
+                    className="remove-reference"
+                  >
+                    Remove Reference
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               type="submit" 
               id="generate-button" 

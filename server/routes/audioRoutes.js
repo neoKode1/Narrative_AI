@@ -1,43 +1,72 @@
+// routes/audioRoutes.js
 import express from 'express';
 import multer from 'multer';
-import { transcribeAudio } from '../services/AddVoiceAudioService.js'; // Service for transcribing audio
-import { generateSpeech } from '../services/elevenLabsService.js'; // Service for generating speech from text
+import { transcribeAudio, generateSpeech, getAvailableVoices } from '../services/elevenLabsService.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() }); // Use memory storage for file uploads
-
-// POST route to handle audio transcription
-router.post('/transcribe', upload.single('audio'), async (req, res) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({ error: 'No audio file uploaded' });
-    }
-
-    // Transcribe the uploaded audio file
-    const transcription = await transcribeAudio(file.buffer);
-    res.status(200).json({ transcription });
-  } catch (error) {
-    console.error('Error processing transcription:', error);
-    res.status(500).json({ error: 'Failed to process transcription' });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 25 * 1024 * 1024 // 25MB limit
   }
 });
 
-// POST route to generate speech from transcribed text
-router.post('/text-to-speech', async (req, res) => {
-  const { transcription } = req.body;
-
-  if (!transcription) {
-    return res.status(400).json({ error: 'No transcription provided' });
-  }
-
+// Transcribe audio to text
+router.post('/transcribe', upload.single('audio'), async (req, res) => {
   try {
-    // Generate audio from transcription using ElevenLabs or another service
-    const audioUrl = await generateSpeech(transcription);
-    res.status(200).json({ audioUrl });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    const transcribedText = await transcribeAudio(req.file.buffer);
+    res.json({ text: transcribedText });
   } catch (error) {
-    console.error('Error generating speech:', error);
-    res.status(500).json({ error: 'Failed to generate speech' });
+    console.error('Transcription error:', error);
+    res.status(500).json({ 
+      error: 'Failed to transcribe audio',
+      details: error.message 
+    });
+  }
+});
+
+// Generate speech from text
+router.post('/generate-voice', async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({ error: 'No text provided' });
+    }
+
+    const audioBuffer = await generateSpeech(text);
+    
+    // Set appropriate headers for audio streaming
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': audioBuffer.length
+    });
+
+    res.send(audioBuffer);
+  } catch (error) {
+    console.error('Speech generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate speech',
+      details: error.message 
+    });
+  }
+});
+
+// Get available voices
+router.get('/voices', async (req, res) => {
+  try {
+    const voices = await getAvailableVoices();
+    res.json({ voices });
+  } catch (error) {
+    console.error('Error fetching voices:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch voices',
+      details: error.message 
+    });
   }
 });
 

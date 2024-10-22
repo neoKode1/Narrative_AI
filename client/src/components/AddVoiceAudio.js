@@ -1,165 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import { ElevenLabsClient, play } from 'elevenlabs';
-import './AddVoiceAudio.css';
+import React, { useState, useRef } from 'react';
+import { Card, CardContent } from './ui/card';    // Named imports
+import { Button } from './ui/button';             // Named import
+import { Alert, AlertDescription } from './ui/alert'; // Named imports
+import { Loader2, Upload, PlayCircle, PauseCircle } from 'lucide-react';
 
-const AddVoiceAudio = () => {
+const AddVoiceAudio = ({ videoUrl }) => {
   const [audioFile, setAudioFile] = useState(null);
-  const [transcription, setTranscription] = useState('');
+  const [transcribedText, setTranscribedText] = useState('');
   const [generatedAudio, setGeneratedAudio] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [elevenlabs, setElevenlabs] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const videoRef = useRef(null);
 
-  useEffect(() => {
-    fetch('/api/elevenlabs-key')
-      .then(response => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (!data.apiKey) {
-          throw new Error('API key is missing from the response');
-        }
-        const client = new ElevenLabsClient({
-          apiKey: data.apiKey
-        });
-        setElevenlabs(client);
-        console.log('ElevenLabs client initialized');
-      })
-      .catch(err => {
-        console.error('Failed to fetch API key:', err);
-        setError(`Failed to initialize ElevenLabs client: ${err.message}`);
-      });
-  }, []);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log('Audio file selected:', file.name);
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('audio/')) {
       setAudioFile(file);
+      setError('');
     } else {
-      console.log('No file selected');
+      setError('Please upload a valid audio file');
     }
   };
 
-  const handleTranscription = async () => {
-    if (!audioFile) {
-      setError('Please upload an audio file.');
-      console.warn('Transcription attempted without an audio file.');
-      return;
-    }
+  const handleTranscribe = async () => {
+    if (!audioFile) return;
 
+    setIsProcessing(true);
     setError('');
-    setLoading(true);
-    console.log('Starting transcription process...');
+
+    const formData = new FormData();
+    formData.append('audio', audioFile);
 
     try {
-      const formData = new FormData();
-      formData.append('audio', audioFile);
-
-      const response = await fetch('/api/audio/transcribe', {
+      const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error('Transcription failed');
 
       const data = await response.json();
-      console.log('Transcription successful:', data.transcription);
-      setTranscription(data.transcription);
+      setTranscribedText(data.text);
     } catch (err) {
-      console.error('Error transcribing audio:', err);
-      setError(`Error transcribing audio: ${err.message}`);
+      setError('Failed to transcribe audio: ' + err.message);
     } finally {
-      setLoading(false);
-      console.log('Transcription process completed.');
+      setIsProcessing(false);
     }
   };
 
-  const handleTextToSpeech = async () => {
-    if (!transcription) {
-      setError('Please transcribe audio first.');
-      console.warn('Text-to-speech attempted without transcription.');
-      return;
-    }
+  const handleGenerateVoice = async () => {
+    if (!transcribedText) return;
 
-    if (!elevenlabs) {
-      setError('ElevenLabs client not initialized. Please try again later.');
-      return;
-    }
-
+    setIsProcessing(true);
     setError('');
-    setLoading(true);
-    console.log('Starting text-to-speech generation...');
 
     try {
-      const audio = await elevenlabs.generate({
-        voice: 'Rachel',
-        text: transcription,
-        model_id: 'eleven_multilingual_v2'
+      const response = await fetch('/api/generate-voice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: transcribedText }),
       });
 
-      console.log('Speech generation successful');
-      setGeneratedAudio(audio);
+      if (!response.ok) throw new Error('Voice generation failed');
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setGeneratedAudio(audioUrl);
     } catch (err) {
-      console.error('Error generating speech:', err);
-      setError(`Error generating speech: ${err.message}`);
+      setError('Failed to generate voice: ' + err.message);
     } finally {
-      setLoading(false);
-      console.log('Text-to-speech process completed.');
+      setIsProcessing(false);
     }
   };
 
-  const handlePlayAudio = async () => {
-    if (generatedAudio) {
-      console.log('Playing generated audio');
-      await play(generatedAudio);
-    } else {
-      console.warn('No generated audio available to play.');
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        videoRef.current?.pause();
+      } else {
+        audioRef.current.play();
+        videoRef.current?.play();
+      }
+      setIsPlaying(!isPlaying);
     }
+  };
+
+  const handleAudioEnd = () => {
+    setIsPlaying(false);
+    videoRef.current?.pause();
+    videoRef.current.currentTime = 0;
   };
 
   return (
     <div className="add-voice-audio">
-      <video autoPlay loop muted className="background-video">
-        <source src="/gremilin.mp4.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      <Card className="w-full max-w-2xl border-2 border-white/20 bg-transparent text-white">
+        <CardContent className="p-6">
+          <h2 className="text-2xl font-bold mb-6 text-center text-white">Add Voice to Video</h2>
 
-      <div className="content">
-        <h2>Add Voice Audio</h2>
+          {error && (
+            <Alert variant="destructive" className="mb-4 border border-red-500/50 bg-red-500/10">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <input type="file" accept="audio/*" onChange={handleFileChange} />
+          <div className="space-y-6">
+            <div className="flex flex-col items-center gap-4">
+              <label className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                <Upload className="h-8 w-8 text-white" />
+                <span className="text-white">Upload Audio File</span>
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+              {audioFile && <p className="text-sm text-white">{audioFile.name}</p>}
+            </div>
 
-        <button onClick={handleTranscription} disabled={loading || !audioFile}>
-          {loading ? 'Transcribing...' : 'Transcribe Audio'}
-        </button>
+            <Button
+              onClick={handleTranscribe}
+              disabled={!audioFile || isProcessing}
+              className="w-full border border-white/20 bg-black hover:bg-white/10 text-white"
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Transcribe Audio
+            </Button>
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+            {transcribedText && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2 text-white">Transcribed Text:</h3>
+                <p className="border border-white/20 bg-black p-4 rounded-md text-white">
+                  {transcribedText}
+                </p>
+                <Button
+                  onClick={handleGenerateVoice}
+                  disabled={isProcessing}
+                  className="w-full mt-4 border border-white/20 bg-black hover:bg-white/10 text-white"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Generate Voice
+                </Button>
+              </div>
+            )}
 
-        {transcription && (
-          <div>
-            <h3>Transcription:</h3>
-            <p>{transcription}</p>
-            <button onClick={handleTextToSpeech} disabled={loading}>
-              Generate Speech
-            </button>
+            {generatedAudio && (
+              <div className="mt-4 flex flex-col items-center gap-4">
+                <audio
+                  ref={audioRef}
+                  src={generatedAudio}
+                  onEnded={handleAudioEnd}
+                  className="hidden"
+                />
+                <Button
+                  onClick={togglePlayPause}
+                  variant="outline"
+                  className="flex items-center gap-2 border border-white/20 bg-black hover:bg-white/10 text-white"
+                >
+                  {isPlaying ? (
+                    <PauseCircle className="h-6 w-6" />
+                  ) : (
+                    <PlayCircle className="h-6 w-6" />
+                  )}
+                  {isPlaying ? 'Pause' : 'Play'} Generated Voice
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        {generatedAudio && (
-          <div>
-            <h3>Generated Speech:</h3>
-            <button onClick={handlePlayAudio}>Play Generated Audio</button>
+      {/* Video Preview Section */}
+      <Card className="w-full max-w-2xl mt-8 border-2 border-white/20 bg-transparent">
+        <CardContent className="p-6">
+          <h3 className="text-xl font-bold mb-4 text-center text-white">Video Preview</h3>
+          <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-white/20">
+            {videoUrl ? (
+              <video
+                ref={videoRef}
+                className="w-full h-full object-contain"
+                src={videoUrl}
+                controls={!generatedAudio}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-white/60">
+                No video selected
+              </div>
+            )}
           </div>
-        )}
-      </div>
+          {videoUrl && generatedAudio && (
+            <p className="text-sm text-center mt-2 text-white">
+              Video playback is synchronized with the generated audio
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { ElevenLabsClient } from "elevenlabs";
 
 const elevenlabs = new ElevenLabsClient({
-  apiKey: process.env.REACT_APP_ELEVENLABS_API_KEY
+  apiKey: process.env.ELEVENLABS_API_KEY
 });
 
 export const transcribeAudio = async (audioBuffer) => {

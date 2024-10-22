@@ -1,3 +1,40 @@
+.video-generator {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: black;
+}
+
+.background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 800px;
+  background-color: rgba(54, 53, 53, 0.425);
+  padding: 40px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .prompt-input {
   width: 100%;
   max-width: 600px;
@@ -6,20 +43,22 @@
   font-size: 16px;
   line-height: 1.5;
   resize: vertical;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   margin-bottom: 10px;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
 }
 
 .prompt-input:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 .character-count {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 10px;
 }
 
@@ -31,9 +70,56 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  width: 100%;
+  max-width: 600px;
+  transition: background-color 0.3s ease;
+}
+
+.generate-button:hover:not(:disabled) {
+  background-color: #0056b3;
 }
 
 .generate-button:disabled {
-  background-color: #cccccc;
+  background-color: rgba(204, 204, 204, 0.5);
   cursor: not-allowed;
+}
+
+.selected-image {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.selected-image img {
+  width: 100%;
+  height: auto;
+}
+
+.video-result {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 20px;
+}
+
+.error, .progress {
+  width: 100%;
+  max-width: 600px;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+  text-align: center;
+  color: white;
+}
+
+.error {
+  background-color: rgba(255, 0, 0, 0.2);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.progress {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
