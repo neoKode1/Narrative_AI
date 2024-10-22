@@ -10,6 +10,7 @@ function VideoGenerator() {
   const [loading, setLoading] = useState(false);
   const [promptText, setPromptText] = useState('');
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState('');
   const MAX_PROMPT_LENGTH = 512;
 
   useEffect(() => {
@@ -23,8 +24,12 @@ function VideoGenerator() {
     }
     setLoading(true);
     setError('');
+    setProgress('Starting video generation...');
+    
     try {
       console.log("Sending request with:", { imageUrl: selectedImage, animationPrompt: promptText });
+      setProgress('Sending request to server...');
+      
       const response = await fetch('http://localhost:5000/api/video/generate', {
         method: 'POST',
         headers: {
@@ -35,15 +40,26 @@ function VideoGenerator() {
           animationPrompt: promptText,
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate video');
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
+
+      setProgress('Processing response...');
       const data = await response.json();
+      
+      if (!data.videoUrl) {
+        throw new Error('No video URL in response');
+      }
+
+      setProgress('Loading video...');
       setVideoUrl(data.videoUrl);
+      setProgress('');
     } catch (error) {
       console.error('Error generating video:', error);
-      setError(error.message);
+      setError(error.message || 'Failed to generate video');
+      setVideoUrl(null);
     } finally {
       setLoading(false);
     }
@@ -69,6 +85,7 @@ function VideoGenerator() {
           placeholder="Enter animation prompt (max 512 characters)"
           className="prompt-input"
           rows={8}
+          disabled={loading}
           style={{
             width: '100%',
             maxWidth: '600px',
@@ -83,17 +100,23 @@ function VideoGenerator() {
         <button 
           onClick={generateVideo} 
           disabled={loading || !selectedImage || !promptText.trim()}
+          className={loading ? 'loading' : ''}
         >
           {loading ? 'Generating Video...' : 'Generate Video'}
         </button>
-        <p>Button state: {loading || !selectedImage || !promptText.trim() ? 'Disabled' : 'Enabled'}</p>
-        <p>Selected Image: {selectedImage ? 'Yes' : 'No'}</p>
-        <p>Prompt Text: {promptText ? 'Yes' : 'No'}</p>
+        
+        {progress && <p className="progress">{progress}</p>}
         {error && <p className="error">{error}</p>}
+        
         {videoUrl && (
           <div>
             <h2>Generated Video:</h2>
-            <video src={videoUrl} controls style={{ width: '100%', maxWidth: '600px' }} />
+            <video 
+              src={videoUrl} 
+              controls 
+              style={{ width: '100%', maxWidth: '600px' }}
+              onError={(e) => setError('Failed to load video: ' + e.message)}
+            />
           </div>
         )}
       </div>

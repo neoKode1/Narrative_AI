@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 import imageRoutes from './routes/imageRoutes.js';
+import videoRoutes from './routes/videoRoutes.js';  // Add this import
 import { setupWebSocket } from './services/websocketService.js';
 
 const result = dotenv.config();
@@ -68,6 +69,7 @@ app.use('/public', (req, res, next) => {
 }));
 
 app.use('/api/image', imageRoutes);
+app.use('/api/video', videoRoutes);  // Add this line to enable video routes
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
