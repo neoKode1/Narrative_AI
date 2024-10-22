@@ -2,16 +2,18 @@ import { Storage } from '@google-cloud/storage';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 
+// Initialize Google Cloud Storage
 const storage = new Storage({
-  keyFilename: path.join(process.cwd(), 'path/to/your-service-account-key.json'),
-  projectId: 'your-project-id',
+  keyFilename: process.env.GCLOUD_KEYFILE_PATH, // Load from environment variable
+  projectId: process.env.GCLOUD_PROJECT_ID,
 });
 
-const bucketName = 'your-bucket-name';
+const bucketName = process.env.GCLOUD_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
+// Function to upload files to GCS
 export const uploadToGCS = async (fileBuffer, contentType) => {
-  const fileName = `${uuidv4()}-generated-image.png`;
+  const fileName = `${uuidv4()}-generated-file.png`;
   const file = bucket.file(fileName);
 
   try {
@@ -25,6 +27,6 @@ export const uploadToGCS = async (fileBuffer, contentType) => {
     return publicUrl;
   } catch (error) {
     console.error('Error uploading to Google Cloud Storage:', error);
-    throw new Error('Failed to upload image to Google Cloud Storage');
+    throw new Error('Failed to upload file to Google Cloud Storage');
   }
 };

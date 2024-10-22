@@ -3,19 +3,25 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 import imageRoutes from './routes/imageRoutes.js';
-import videoRoutes from './routes/videoRoutes.js';
-import audioRoutes from './routes/audioRoutes.js';
+import { setupWebSocket } from './services/websocketService.js';
 
 const result = dotenv.config();
 if (result.error) {
-  console.error('Error loading .env file:', result.error);
+  console.error('Critical Error: Failed to load .env file:', result.error);
 }
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -24,8 +30,32 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use('/public', express.static(path.join(__dirname, 'public'), {
+// Enhanced static file serving with logging
+app.use('/public', (req, res, next) => {
+  console.log('Static file request:', {
+    path: req.path,
+    fullUrl: req.url,
+    method: req.method
+  });
+  
+  const filePath = path.join(__dirname, 'public', req.path);
+  
+  // Check if file exists
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error('File not found:', {
+        requestedPath: req.path,
+        fullPath: filePath,
+        error: err.message
+      });
+    } else {
+      console.log('File found:', filePath);
+    }
+    next();
+  });
+}, express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, path, stat) => {
+    console.log('Setting headers for:', path);
     if (path.endsWith('.png')) {
       res.set('Content-Type', 'image/png');
     } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
@@ -33,36 +63,15 @@ app.use('/public', express.static(path.join(__dirname, 'public'), {
     } else if (path.endsWith('.mp4')) {
       res.set('Content-Type', 'video/mp4');
     }
+    console.log('Response headers:', res.getHeaders());
   }
 }));
 
-app.get('/api/elevenlabs-key', (req, res) => {
-  if (process.env.ELEVENLABS_API_KEY) {
-    res.json({ apiKey: process.env.ELEVENLABS_API_KEY });
-  } else {
-    res.status(500).json({ error: 'ElevenLabs API key not found in server environment' });
-  }
-});
-
 app.use('/api/image', imageRoutes);
-app.use('/api/video', videoRoutes);
-app.use('/api/audio', audioRoutes);
-
-app.use((req, res, next) => {
-  res.status(404).send("Sorry, that route doesn't exist.");
-});
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log('Environment variables loaded:');
-  console.log('PORT:', process.env.PORT);
-  console.log('HUGGING_FACE_API_TOKEN:', process.env.HUGGING_FACE_API_TOKEN ? 'Set' : 'Not set');
-  console.log('ELEVENLABS_API_KEY:', process.env.ELEVENLABS_API_KEY ? 'Set' : 'Not set');
-  console.log('RUNWAYML_API_SECRET:', process.env.RUNWAYML_API_SECRET ? 'Set' : 'Not set');
 });
+
+setupWebSocket(server);

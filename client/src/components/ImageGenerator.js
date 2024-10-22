@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ImageGenerator.css';
 
-function ImageGenerator() {
+// Fallback image as a data URL - a simple gray rectangle with text
+const FALLBACK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%23999' text-anchor='middle' dy='.3em'%3EImage Not Found%3C/text%3E%3C/svg%3E";
+
+const ImageGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState([]);
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -10,78 +13,127 @@ function ImageGenerator() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('Component mounted - Loading stored images');
     const storedImages = JSON.parse(localStorage.getItem('imageData')) || [];
+    console.log('Retrieved stored images:', storedImages);
     setGeneratedImages(storedImages);
   }, []);
 
   const handleImageClick = (imageUrl) => {
+    console.log('Image clicked:', imageUrl);
     navigate('/VideoGenerator', { state: { selectedImage: imageUrl } });
   };
 
-  const handleGenerateImage = async (e) => {
+  const generateImage = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    if (!prompt) {
-      setError("Please enter a prompt.");
-      setLoading(false);
+    if (!prompt.trim()) {
+      setError('Please enter a prompt');
       return;
     }
 
+    console.log('Starting image generation process');
+    console.log('Current prompt:', prompt);
+    
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch('http://localhost:5000/api/image/generate', {
+      console.log('Sending request to backend');
+      const response = await fetch('/api/image/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt: prompt.trim() }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const generatedImageUrl = `http://localhost:5000${data.imageUrl}`;
+      console.log('Response received:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('Error response:', errorData);
+        throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (data.images && data.images.length > 0) {
+        const generatedImageUrl = data.images[0];
+        console.log('New image URL:', generatedImageUrl);
+
+        // Verify the image URL
+        try {
+          const imgResponse = await fetch(generatedImageUrl);
+          if (!imgResponse.ok) {
+            throw new Error('Generated image URL is not accessible');
+          }
+        } catch (imgError) {
+          console.error('Image verification failed:', imgError);
+          throw new Error('Failed to verify generated image');
+        }
 
         const updatedImages = [...generatedImages, generatedImageUrl];
+        console.log('Updating images array:', updatedImages);
+        
         setGeneratedImages(updatedImages);
         localStorage.setItem('imageData', JSON.stringify(updatedImages));
+        console.log('Images saved to localStorage');
 
         setPrompt('');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate image');
+        console.error('No image URL in response:', data);
+        throw new Error('No image URL received from server');
       }
     } catch (error) {
-      console.error('Error:', error);
-      setError(error.message || 'An error occurred while generating the image');
+      console.error('Error generating image:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      setError(error.message || 'Failed to generate image. Please try again.');
     } finally {
       setLoading(false);
+      console.log('Image generation process completed');
     }
   };
 
   return (
     <div className="image-generator">
-      {/* Add Video Background */}
-      <video autoPlay loop muted className="background-video">
+      <video autoPlay loop muted className="background-video"
+        onError={(e) => console.error('Video loading error:', e)}
+      >
         <source src="/madclownvid.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       <div className="content">
         <h2>Image Generator</h2>
-        <form onSubmit={handleGenerateImage} className="image-upload-form">
+        <form onSubmit={generateImage} className="image-upload-form">
           <div className="input-group">
             <textarea
               id="prompt-input"
               name="prompt"
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                console.log('Prompt updated:', e.target.value);
+                setPrompt(e.target.value);
+              }}
               placeholder="Enter a detailed prompt for image generation"
               className="prompt-input"
               rows="4"
               required
             />
-            <button type="submit" id="generate-button" className="generate-btn" disabled={loading}>
+            <button 
+              type="submit" 
+              id="generate-button" 
+              className="generate-btn" 
+              disabled={loading}
+            >
               {loading ? 'Generating...' : 'Generate Image'}
             </button>
           </div>
@@ -96,7 +148,15 @@ function ImageGenerator() {
               src={imageUrl}
               alt={`Generated ${index + 1}`}
               onClick={() => handleImageClick(imageUrl)}
-              onError={(e) => {e.target.src = 'http://localhost:5000/public/placeholder-image.png'; e.target.alt = 'Image load error';}}
+              onLoad={() => console.log('Image loaded successfully:', imageUrl)}
+              onError={(e) => {
+                console.error('Image loading error:', {
+                  url: imageUrl,
+                  error: e
+                });
+                e.target.src = FALLBACK_IMAGE;
+                e.target.alt = 'Image load error';
+              }}
               className="generated-img"
             />
           ))}
@@ -104,6 +164,6 @@ function ImageGenerator() {
       </div>
     </div>
   );
-}
+};
 
 export default ImageGenerator;

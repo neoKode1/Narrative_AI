@@ -1,0 +1,4049 @@
+Run a model from Node.js
+Table of contents
+
+Prerequisites
+🐇 Quickstart: Scaffold a project with a one-liner
+🐢 Slowstart: Set up a project from scratch
+Step 1: Authenticate
+Step 2: Create a new Node.js project
+Step 3: Install the Replicate JavaScript client
+Step 4: Write some code
+Step 5: Run your code
+Next steps
+Further reading
+Learn how to run a model on Replicate using Node.js.
+
+This guide includes a quickstart to scaffold a new project with a single command in your terminal, followed by a step-by-step tutorial for setting up a project from scratch. By the end, you'll have a working Node.js project that can run any model on Replicate.
+
+Prerequisites
+Node.js 16 or greater: The simplest way to install Node.js is using the installer at nodejs.org.
+
+🐇 Quickstart: Scaffold a project with a one-liner
+To get up and running as quickly as possible, you can use create-replicate, an npm package that creates a project directory for you, writes some starter code, installs the dependencies, and runs the code.
+
+Run the following command to scaffold a new project:
+
+
+Copy
+npx create-replicate
+That's it. You should now have a working Node.js project that generates images with the SDXL model using Replicate's API.
+
+If you want to use a different model than SDXL, specify it when creating your project:
+
+
+Copy
+npx create-replicate --model black-forest-labs/flux-schnell
+To learn more about scaffolding new Node.js projects, check out the create-replicate documentation.
+
+🐢 Slowstart: Set up a project from scratch
+If you prefer to manually set up your Node.js project step by step, follow the instructions below.
+
+Step 1: Authenticate
+Authenticate by setting your Replicate API token in an environment variable:
+
+
+Copy
+export REPLICATE_API_TOKEN=r8_******
+Step 2: Create a new Node.js project
+
+Copy
+# create the directory
+mkdir my-replicate-app
+cd my-replicate-app
+ 
+# set up package.json
+npm init -y
+npm pkg set type=module
+Step 3: Install the Replicate JavaScript client
+Use npm to install the Replicate JavaScript client:
+
+
+Copy
+npm install replicate
+Step 4: Write some code
+Create a file called index.js and add the following code:
+
+
+Copy
+import Replicate from "replicate";
+const replicate = new Replicate();
+ 
+console.log("Running the model...");
+const output = await replicate.run(
+  "black-forest-labs/flux-schnell",
+  {
+    input: {
+      prompt: "An astronaut riding a rainbow unicorn, cinematic, dramatic",
+    },
+  }
+);
+console.log(output);
+Step 5: Run your code
+Next, run your code from your terminal:
+
+
+Copy
+node index.js
+You should see the output from the model, which will be a URL to the generated image. It should look something like this:
+
+
+Copy
+Running the model...
+[
+  'https://replicate.delivery/pbxt/ywTOFx93BcKBBRGP8VzViF96zkNnOxIjsofHMvTeJTG9ZwTSA/out-0.png'
+]
+ 
+Next steps
+Now you're up and running on Replicate with Node.js. 🚀🐢
+
+In this guide you used the SDXL image generation model, but you can adapt the code to run any model on Replicate. Try chatting with images using the LLaVa vision model, or writing AI-generated Python code using CodeLlama. There are thousands of public models on Replicate, and you can run any of them using the project you just created.
+
+
+
+
+
+Best practices for Replicate models
+Table of contents
+
+Getting started
+Make your model easy to understand
+Naming your model
+Include a clear description
+Use well named model inputs
+Order your inputs
+Add guidance to explain inputs
+Pick defaults that balance speed and quality
+Give guidance on recommended ranges
+Handle image inputs well
+Dependencies
+Model weights
+This guide will walk you through the best practices for pushing a reliable, fast, and user-friendly model to Replicate.
+
+Getting started
+All models on Replicate use Cog, an open-source tool that lets you package machine learning models in a standard, production-ready container. It’s based on Docker.
+
+If you’re new to Cog, we recommend starting from our docs: Push a model to Replicate
+
+In short, you need to:
+
+define the Docker environment your model runs in with cog.yaml
+define how predictions are run with predict.py
+test your model by running predictions locally, for example: cog predict -i image=@input.jpg
+push the model to Replicate with cog push
+For the rest of this guide we’ll assume you’re familiar with Cog and you know how to push a model to Replicate.
+
+Make your model easy to understand
+People must be able to use your model without reading the source code.
+
+Naming your model
+All names on Replicate are lowercase and use dashes instead of spaces. For example, llama-2-70b-chat.
+
+Best practice is to use the model’s official name, like the name of the Github repo or HuggingFace model.
+
+Where there are variations of a model, we recommend adding those variations to the end of the name to make the model distinct. These are commonly different parameter sizes or fine-tunes, such as codellama-34b and codellama-34b-instruct.
+
+Include a clear description
+A short one line description explaining what the model does. Avoid technical terms and abbreviations in your description.
+
+Some good examples:
+
+For the autocaption model: "Automatically add captions to a video"
+For the llama-2-70b-chat: "A 70 billion parameter language model from Meta, fine tuned for chat completions"
+Use well named model inputs
+Do not prematurely shorten names. Use negative_prompt instead of n_prompt.
+
+Order your inputs
+Put the most important inputs first.
+
+Group related inputs together. For example, prompt and negative_prompt should be together in your predict.py inputs. Users usually want to change them together.
+
+For models with many inputs, consider prefixing fields with a group name. For example, controlnet_strength, controlnet_image and controlnet_model.
+
+Add guidance to explain inputs
+Even when obvious to you. For example, not everyone knows how to use a negative prompt. Guidance like this would help them:
+
+A negative prompt is a prompt containing all the things you do not want in your output
+
+Pick defaults that balance speed and quality
+Good defaults get quality outputs quickly.
+
+For example, with SDXL you get good images at 768x768 with 25 inference steps, which is 3x faster than 1024x1024 at 50 steps.
+
+Give guidance on recommended ranges
+A model should make it difficult to get bad results while remaining flexible for anyone wanting to experiment.
+
+Keep wide input ranges, but use guidance text to explain where the best results lie.
+
+Handle image inputs well
+If your model takes images as inputs, it should accept all the common image formats users will try. For example, JPEG, PNG, GIF and WEBP, as well as images with alpha channels (transparency).
+
+Where inference would fail with a given input (like an RGBA image), convert images to a format that works.
+
+An image that's too big will often cause out of memory errors. Scale images to a size that works best with your model, but maintain aspect ratio.
+
+Some models need dimensions that are multiples of 8, or similar (for example Stable Diffusion). In these cases, automatically scale images to the nearest multiple.
+
+Make image scaling easy and automatic, so users can throw any image at your model and get good results. But add controls so they can override defaults and control sizing if they need to.
+
+Our stable-video-diffusion has a good implementation showing how to handle image inputs well: view resizing code, view resizing options on model.
+
+Dependencies
+Keep dependencies to a minimum. Fewer dependencies mean smaller containers and faster builds.
+
+Use pinned versions. Pinning your dependencies to specific versions makes your model more reproducible. It will make it easier to debug.
+
+OpenCV is a big dependency. If you’re using it, we recommend using the headless version opencv-python-headless which is a smaller version for server use.
+
+Model weights
+
+
+
+
+Home / Guides
+Prompt and fine-tune open-source large language models (LLMs)
+Table of contents
+
+Why "large"?
+But I don't have a supercomputer!
+Sections in this guide
+Large language models (LLMs) are deep learning models trained on text. They are used to predict, classify, and generate text, but they can do a lot more: language models provide the "text" side of text-to-image models, and some modern LLMs can use multimodal inputs like images.
+
+In this guide we'll cover the basic concepts behind LLMs, how to use them, how to find the right model for your needs, and even how to fine-tune your own language model on a specialized dataset.
+
+Why "large"?
+Language modeling is not a brand new discipline. Researchers and engineers have been modeling language for decades with statistical methods, hand-coded grammars, even regular expressions. But over the last few years we've seen the Bitter Lesson: the most effective improvements in AI come from general methods that scale well with computation.
+
+The "large" in Large Language Model is not a specific amount of compute or data. It refers to a qualitative shift that comes when you train a model with enough layers, enough parameters, and enough data: bigger suddenly becomes better. Language models have gone from auto-suggesting the next word, to writing essays and code and poetry, powered by the application of data and compute.
+
+But I don't have a supercomputer!
+These models are extremely expensive to train. The biggest companies in the world are competing to have the biggest GPU cluster and train models with the most parameters. But that doesn't mean you can't use them!
+
+Companies like Meta, Google and Mistral have released not just the code, but the trained weights of their models FOR the community to build on. Training on web-scale datasets is the expensive part of the process. Using them to make predictions, or inference, requires much less computation. You can even run open models on your local computer, if you have the hardware and/or patience.
+
+You can also call open models through Replicate's API. Run models like Meta's Llama, Google's Flan-T5, or Mistral's Mixtral in seconds with just an API key.
+
+Sections in this guide
+How to use open source language models
+A guide to the key concepts and parameters of LLMs, and how to use them to generate text.
+Use cases for language models
+What can you do with LLMs? A guide to the different use cases for language models.
+Popular language models
+A guide to the most popular open source language models, their strengths and weaknesses.
+How to prompt LLMs
+Techniques for prompting LLMs, and how to get the best results.
+Advanced prompting
+A guide to advanced prompt engineering in theory and practice.
+Fine-tuning language models
+A guide to fine-tuning language models on your own dataset.
+
+
+Home / Guides / Language models
+How to use open source language models
+Table of contents
+
+Prompt
+Tokens
+Context window
+System prompt
+Temperature
+top_p
+top_k
+Minimum and maximum new tokens
+Stop sequences
+Frequency penalty (repetition_penalty)
+Let's cover the basics of how to use open source language models by exploring the important language model parameters, and how they work.
+
+To work through these examples, you can use a language model on Replicate, like meta/llama-3.1-405b-instruct.
+
+prompt
+tokens
+context window
+system prompt
+temperature
+top_p
+top_k
+minimum and maximum tokens
+stop sequences
+frequency penalty
+Prompt
+The most important parameter for language models is the prompt. The prompt is the primary input instruction for the language model. When you feed the prompt to the language model, the language model responds with what it thinks is the most-likely next word.
+
+Try out some of your own prompts below.
+
+Tell me a story about cats!
+
+Tokens
+Tokens are the foundational unit of language model inputs and outputs. Language models don't see words or characters like you and I -- they see tokens.
+
+For example, the sentence of "Transformers language models are neat!" actually is broken down into 9 tokens: <s> Trans form ers language models are neat and !.
+
+Each language model has a distinct vocabulary of tokens, so the exact number of tokens will vary from model to model. For Meta's Llama2 models, the vocabulary consists of 32,000 possible tokens. A token vocabulary is a map of text string to integer id value.
+
+As a rule of thumb, tokens are typically around 4 characters long. But this isn’t always the case, sometimes a single character can count as an entire token.
+
+Below you can visualize how the Llama2 tokenizer chunks words into tokens. You can also play with this yourself on the llama-tokenizer-js playground. You'll also notice that this tool adds a <s> tokento the beginning of the list of tokens. This this is a special "beginning of sentence token" or bos_token, and it is how Llama2 understands that this is the beginning of a prompt. You don't need to include this in your prompt, it will automatically be included by the model tokenizer, but you will occasionally see it mentioned when reading about Llama2
+
+llama-tokenizer-js playground
+Context window
+Language models typically have a limited set of context, meaning they can only handle so many tokens before they start forgetting text they have previously seen or generated. This limit of tokens is called the context window.
+
+Different language models have different sized context windows. For example the Llama2 model has a context window of 4,096 tokens or about 12 pages of text. The leading-edge proprietary models like GPT-4-Turbo have a context window of 128,000 tokens, or about 300 pages of text.
+
+It's important to understand the context window of the model you're using, and how it impacts your use case. For example if you're using Llama2, you won't be able to ingest an entire book and answer questions; you'll need to use additional strategies like retrieval augmented generation. While GPT-4-Turbo can read an entire book without skipping a beat.
+
+System prompt
+The system prompt is a secondary prompt that you can use with instruction-tuned language models to to define the desired "behavior" or "personality" of the language model response.
+
+For example, if you want the language model to only respond with haikus, you can set the system prompt to Only respond with haikus.
+
+It's a beautiful day in the neighborhood, would you be my neighbor? system_prompt: Only respond with haikus.
+
+System prompts are great for defining the "character" of your language model response. For example, this is what happens when we set our system prompt to be Yarr matey! respond as if ye are a pirate.
+
+Describe the free energy principle system_prompt: Yarr matey! respond as if ye are a pirate.
+
+Temperature
+The temperature parameter is used to set the randomness of a language model response, by scaling its probability distribution over tokens.
+
+When the temperature is set to 0.01, the language model will always respond with the most likely token.
+
+When the temperature is set to 1.0, the language model's probability distribution is used as-is, without any scaling. While the most likely token is still the most probable choice, there's room for diversity, as the model doesn't always select it.
+
+As the temperature increases above 1.0, the probability distribution is scaled to increase entropy, meaning that lower-probability tokens gain a higher chance of being selected. This leads to more surprising and varied outputs, as the model starts to explore less likely options. High temperatures, such as 5.0, can result in highly random and creative responses, but they may also reduce coherence and relevance.
+
+In summary, a lower temperature (<1.0) steers the model towards more deterministic and predictable behavior. A temperature of 1.0 offers a balance, using the model's learned probability distribution to guide token selection. Higher temperatures (>1.0) increase randomness and creativity in the outputs.
+
+Experimenting with different temperature settings can help you find the optimal balance for your specific use case, depending on whether you prioritize predictability or creativity.
+
+Write me lyrics for a song about the free energy principle
+
+
+Copy
+temperature
+- defaultValue: 0.7
+- min: 0.1
+- max: 5
+- step: 0.1
+top_p
+The top_p parameter is used to control the diversity of a language model's responses by adjusting its word selection process.
+
+When top_p is set to a lower value, like 0.1, the language model restricts its choices to a very small set of the most likely tokens. This leads to more predictable and conservative outputs, as it only considers the top 10% of the most probable words in each step.
+
+As top_p increases, the model includes a broader range of words in its selection pool, allowing for more varied and creative responses. A top_p value of 0.9 or higher enables the model to consider a wider array of possibilities, picking from the top 90% of probable words. This setting is useful when you want the language model to generate more diverse and less constrained text.
+
+So, as a general guideline: if you're aiming for more consistent and focused outputs, use a lower top_p value. If you're seeking creativity and a wider range of responses, opt for a higher top_p.
+
+top_p is also influenced by both the temperature and top_k parameters. Try playing with all of the knobs in the example below.
+
+Explain Docker but pretend to be a RuneScape wizard
+
+
+Copy
+top_p
+- defaultValue: 0.95
+- min: 0.0
+- max: 1.0
+- step: 0.01
+
+Copy
+top_k
+- defaultValue: -1
+- min: -1
+- max: 50
+- step: 1.0
+
+Copy
+temperature
+- defaultValue: 0.7
+- min: 0.1
+- max: 5
+- step: 0.1
+top_k
+The top_k parameter is a method used to refine the selection process of a language model when it generates text. It limits the number of words or tokens the model considers at each step of the generation process.
+
+When top_k is set to a specific value, say 10, the model only considers the top 10 most likely next words or tokens at each step. It essentially ignores all other words in its vocabulary, regardless of their probability. This restriction helps to focus the model's choices and can lead to more predictable and relevant text.
+
+If top_k is set to a very high number, the model's behavior begins to resemble more unrestricted, probabilistic generation, as it's allowed to consider a wide range of possible words. Conversely, a very low top_k value (like 1 or 2) makes the model's output highly deterministic and less varied.
+
+Therefore, top_k is a key parameter for balancing creativity and coherence in text generation. A lower top_k leads to safer, more predictable text, while a higher top_k allows for more diverse and potentially creative outputs. The ideal top_k value often depends on the specific task and desired output characteristics.
+
+Explain Docker but pretend to be a RuneScape wizard
+
+
+Copy
+top_p
+- defaultValue: 0.95
+- min: 0.0
+- max: 1.0
+- step: 0.01
+
+Copy
+top_k
+- defaultValue: -1
+- min: -1
+- max: 50
+- step: 1.0
+
+Copy
+temperature
+- defaultValue: 0.7
+- min: 0.1
+- max: 5
+- step: 0.1
+Minimum and maximum new tokens
+The min_new_tokens and max_new_tokens parameters are used to control the length of the generated output.
+
+min_new_tokens sets the minimum number of new tokens that the model should generate. This is useful when you need to ensure that the output has a certain amount of substance or detail.
+
+max_new_tokens defines the maximum number of tokens the model is allowed to generate. This parameter ensures that the output doesn't exceed a certain length. It's helpful in keeping generated content concise.
+
+Explain Docker but pretend to be a RuneScape wizard
+
+
+Copy
+max_new_tokens
+- defaultValue: 128
+- min: 1
+- max: 1024
+- step: 1.0
+
+Copy
+min_new_tokens
+- defaultValue: -1
+- min: -1
+- max: 1024
+- step: 1.0
+Stop sequences
+These are sequences of tokens that, when generated, will stop the model from generating any more text.
+
+This is useful for controlling the length and relevance of the output. For example, if you set the stop sequence to a period ".", the model will stop generating text once it completes a sentence.
+
+Without a stop sequence the model can continue generating text up to its maximum token limit, or until it reaches a conclusion. This can lead to long or off-topic responses.
+
+Frequency penalty (repetition_penalty)
+This parameter controls the amount of repetition in the generated text. It changes the likelihood of repeatedly using the same words or phrases.
+
+With a repetition_penalty of 0, there is no penalty, allowing the model to use words as frequently as it needs. This can sometimes lead to repetitive text, especially in longer outputs.
+
+If you're noticing too much repetition in the model's output, increasing the repetition_penalty can help. A higher setting, generally ranging from 0.1 to 1, imposes a stronger penalty on the recurrence of words. This motivates the model to employ a broader range of vocabulary and to write sentences with greater variation.
+
+Do not set the penalty too high. This can lead the model to avoid relevant terms that are necessary for coherent text.
+Generate photos of real people with Photomaker
+Table of contents
+
+An example
+How to use PhotoMaker
+Use multiple images for best results
+Include the trigger word
+Parameters
+Run PhotoMaker with an API
+Get your API token
+Run PhotoMaker with Python
+Be adventurous with PhotoMaker
+PhotoMaker and ComfyUI
+TencentARC PhotoMaker is an AI tool that allows you to:
+
+make realistic photos of real people instantly (without needing to train a LoRA or fine-tune a model)
+maintain likenesses from images even in different styles and poses
+generate images of people with a strong likeness using any SDXL base model or fine-tune
+You can run PhotoMaker on Replicate. This is a photorealistic model that uses RealVisXL V3.0 as the SDXL base weights.
+
+There’s also a styled PhotoMaker that uses SDXL Unstable Diffusers to make 3D renders of people.
+
+An example
+In this example we show an input photo of Yann LeCun, a famous computer scientist, and we generate a new photo of him receiving a Nobel Prize.
+
+You can see how well PhotoMaker maintains the likeness of the input from a single image.
+
+Input
+
+prompt
+A close-up photo of a scientist img receiving the Nobel Prize
+Output
+
+Tweak it
+How to use PhotoMaker
+Use multiple images for best results
+PhotoMaker takes 1 or more images as input and generates a new image based on a prompt. To get the best likeness in your results we recommend using 4 input images of the same person.
+
+Include the trigger word
+Your prompt must include the trigger word to activate PhotoMaker. In all of Replicate’s models the trigger word is img:
+
+A close-up photo of a scientist img receiving the Nobel Prize
+
+Parameters
+We recommend 20 to 30 steps with a guidance scale of 5.
+
+As PhotoMaker uses SDXL, you can use prompt, negative prompt, number of steps and guidance scale as you would with Stable Diffusion. Read our Stable Diffusion guide for more tips.
+
+Run PhotoMaker with an API
+All models on Replicate come with a production-ready API. You can use our official Python, Node.js, Swift, Elixir and Go clients.
+
+We'll use the Python client in this example, and run the prediction we showed above.
+
+Get your API token
+You’ll need to sign up for Replicate, then you can find your API token on your account page.
+
+Run PhotoMaker with Python
+Install Replicate’s Python client library:
+
+
+Copy
+pip install replicate
+Set the REPLICATE_API_TOKEN environment variable:
+
+
+Copy
+export REPLICATE_API_TOKEN=r8-*********************************
+Import the client and run the PhotoMaker model:
+
+
+Copy
+import replicate
+ 
+output = replicate.run(
+    "tencentarc/photomaker:latest",
+    input={
+        "prompt": "A close-up photo of a scientist img receiving the Nobel Prize",
+        "num_steps": 30,
+        "style_name": "Photographic (Default)",
+        "input_image": "https://replicate.delivery/pbxt/KJJUD2bFRLjW3cbCZiPrbRI3sdNzKUS0ALG3bRFFhxFcecfU/lecun.jpg",
+        "num_outputs": 1,
+        "guidance_scale": 5,
+        "style_strength_ratio": 20
+    }
+)
+print(output)
+Be adventurous with PhotoMaker
+Not only can you use photographic inputs of people, but you can pass in paintings, photos of sculptures, 3D renders and more. You can bring historic figures to life, or see how video game characters might look in the real world.
+
+If you ask for multiple people, or combine different people, you’ll get weird but interesting results.
+
+Here is Isaac Newton beneath an apple tree:
+
+Input
+
+prompt
+A photo of a man img sitting beneath an apple tree
+Output
+
+Tweak it
+PhotoMaker and ComfyUI
+You can use PhotoMaker with ComfyUI, and it’s supported in our run any ComfyUI workflow model.
+
+If you’re familiar with ComfyUI, you can use the PhotoMaker nodes to combine the tool with other models, such as IPAdapters and LoRAs. You can also pick and choose from all the SDXL base weights available.
+
+In this example we used the ComfyUI PhotoMaker workflow to turn photos of a Julius Caesar sculpture into a photo of a real person:
+
+Input
+
+workflow_json
+[JSON code not shown]
+
+
+
+How to use Stable Diffusion
+Table of contents
+
+Prompt
+Negative prompt
+Width and height
+Number of inference steps
+Seed
+Guidance scale
+Scheduler (or sampler)
+Batch size
+Let's cover the basics. These are the parameters you'll see when using Stable Diffusion:
+
+prompt
+negative prompt
+width and height
+steps (or number of inference steps)
+guidance scale (classifier-free guidance scale, or CFG scale)
+seed
+scheduler (or sampler)
+batch size
+Prompt
+The most important parameter is the prompt. It's a text prompt that tells the model what image to generate.
+
+Generally you should:
+
+use comma separated terms (do not prompt Stable Diffusion like you would talk to ChatGPT)
+put the most important thing first
+keep your prompt within 75 tokens (or about 60 words)
+Example prompts:
+
+a photo of a cat, photography, studio portrait, 50mm lens
+an oil painting of a cat, abstract, impressionism, 1920s
+Input
+prompt
+a photo of a cat, photography, studio portrait, 50mm lens
+width
+768
+height
+768
+seed
+31300
+Output
+
+Tweak it
+Negative prompt
+A negative prompt is a list of all the things you don't want in your image. Write it in the same way you would a normal prompt: comma separated terms, with the most important thing first.
+
+If you're asking for a 'photo of a cat', and you're getting back results that look like paintings or illustrations instead of a photo, put 'painting, illustration' in your negative prompt.
+
+Let’s take our previous cat example and add a negative prompt to see the difference. Imagine that we didn’t want a brown cat, and we didn't want a cat that looked so serious, so we'll use the negative prompt: 'brown cat, serious':
+
+Input
+prompt
+a photo of a cat, photography, studio portrait, 50mm lens
+negative_prompt
+brown cat, serious
+width
+768
+height
+768
+seed
+31300
+Output
+
+Tweak it
+Width and height
+For Stable Diffusion 1.5, outputs are optimised around 512x512 pixels. Many common fine-tuned versions of SD1.5 are optimised around 768x768.
+
+The best resolutions for common aspect ratios are typically:
+
+1:1 (square): 512x512, 768x768
+3:2 (landscape): 768x512
+2:3 (portrait): 512x768
+4:3 (landscape): 768x576
+3:4 (portrait): 576x768
+16:9 (widescreen): 912x512
+9:16 (tall): 512x912
+For SDXL, outputs are optimised around 1024x1024 pixels. The best resolutions for common aspect ratios are typically:
+
+1:1 (square): 1024x1024, 768x768
+3:2 (landscape): 1152x768
+2:3 (portrait): 768x1152
+4:3 (landscape): 1152x864
+3:4 (portrait): 864x1152
+16:9 (widescreen): 1360x768
+9:16 (tall): 768x1360
+Width and height must be divisible by 8.
+
+If you want to generate images larger than this, we recommend using an upscaler.
+View our collection of upscaling models.
+
+Number of inference steps
+This is the number of steps the model will take to generate your image.
+
+A larger number of steps increases the quality of the output but it takes longer to generate.
+
+For vanilla SDXL and Stable Diffusion 1.5 you should start with a value of about 20 steps. Don’t go too high though, because after a point each step helps less and less. 50 steps is a good maximum.
+
+Recent models like SDXL Turbo and SD Turbo can generate high quality images in just a single step, making them exceptionally fast.
+
+Seed
+A seed is a number used to initialize randomness for the model. By setting a seed, you can get the same output every time.
+
+If you find an image you like but want to tweak it or improve quality, you can use the same seed and change other parameters.
+
+For example, keep the same seed and:
+
+increase the number of steps to improve quality
+tweak the prompt to tweak the image
+experiment with guidance scale
+If you have a fixed seed but change the width or height of the image, then you will not see consistent results.
+
+Guidance scale
+The guidance scale tells the model how similar the output should be to the prompt. Start with a value of 7 or 7.5.
+
+If your outputs aren’t matching your prompt as much as you’d like, try increasing this number. If you want the AI to be more creative, lower it.
+
+SDXL Turbo and SD Turbo do not use a guidance scale. If the tool you use has an option for it, set it to 0.
+
+Scheduler (or sampler)
+Choosing a scheduler is an advanced parameter. They play a critical role in determining how the noise is incrementally reduced (denoising) to form the final output.
+
+Many users will have a favorite scheduler and stick with it. Most schedulers give similar results, but some can sample faster, while others can get good results in fewer steps.
+
+We recommend starting with Euler or Euler ancestral (EULER_A), a good scheduler for both SD1.5 and SDXL.
+
+DPM++ 2M Karras is a popular choice among users of AUTOMATIC1111, which is a user interface tool for Stable Diffusion.
+
+Batch size
+This is the number of images that will be generated at once. A larger batch size needs more memory, but time per image is usually reduced.
+
+The number of images you can batch at once is limited by the memory available.
+
+On Replicate, SDXL image generation is limited to batches of 4.
+
+Newer models that produce images in fewer steps also use less memory, and can batch more images at once.
+
+
+
+
+Image to image (img2img) with Stable Diffusion
+Table of contents
+
+Prompt strength (or denoising strength)
+Using prompt strength 0.95
+Using prompt strength 0.45
+Use image-to-image to take the features and structure of a starting image and reimagine them with a prompt. The colors in your original image will be preserved.
+
+Input
+
+prompt
+A rainbow coloured tiger
+prompt_strength
+0.65
+Output
+
+Tweak it
+Prompt strength (or denoising strength)
+This only applies to image-to-image and inpainting generations.
+
+It determines how much of your original image will be changed to match the given prompt.
+
+Higher numbers change more of the image, lower numbers keep the original image intact. Values between 0.5 and 0.75 give a good balance.
+
+When inpainting, setting the prompt strength to 1 will create a completely new output in the inpainted area.
+
+Using prompt strength 0.95
+In this example we’ve increased the prompt strength. You can see that the image has changed a lot, it matches the prompt more closely and our original cat is very much a tiger.
+
+Input
+
+prompt
+A rainbow coloured tiger
+prompt_strength
+0.95
+Output
+
+Tweak it
+Using prompt strength 0.45
+If we do the opposite, and reduce the prompt strength, you can see that much more of the original image is preserved. Our cat has only slightly changed, and it’s showing minor tiger-like features.
+
+Input
+
+prompt
+A rainbow coloured tiger
+prompt_strength
+0.45
+Output
+
+Tweak it
+
+
+
+Inpainting with Stable Diffusion
+Table of contents
+
+Prompt strength and inpainting
+Inpainting vs outpainting
+Inpainting is like an AI-powered erasing and painting tool.
+
+It can be used to:
+
+remove unwanted objects from an image
+replace or change existing objects in an image
+fix ugly or broken parts of a previously generated image
+expand the canvas of an image (outpainting)
+It is similar to image-to-image.
+
+Input
+prompt
+An orange cat sitting on a bench
+prompt_strength
+0.8
+image
+
+mask
+
+seed
+47363
+Output
+
+Tweak it
+🧑‍🎨
+Check out inpainter.app and outpainter.app to play around with interactive interfaces for inpainting and outpainting.
+
+Prompt strength and inpainting
+You can use the 'prompt strength' parameter to change how much the starting image guides the area being inpainted.
+
+A value of 0.65 will keep the same colors and some of the structure that was there before, but will also generate new content based on the prompt.
+
+Setting prompt strength to 1 will completely ignore the original image and only generate new content.
+
+In the example below, you can see the difference – the cat is no longer dependent on the white-ish color of the dog – it is now much more orange as specified in the prompt.
+
+Input
+prompt
+An orange cat sitting on a bench
+prompt_strength
+1
+image
+
+mask
+
+seed
+47363
+Output
+
+Tweak it
+In this guide, we've covered how to use inpainting to remove unwanted objects from an image, replace or change existing objects in an image, and fix ugly or broken parts of a previously generated image. But you can also use it to expand the canvas of an image. Check out the outpainting guide to learn more about that process.
+
+Inpainting vs outpainting
+Outpainting expands the canvas of an image. Consider a portrait photo where the top of the head is cropped out. Outpainting can be used to generate the missing part of the head.
+
+It’s very similar to inpainting. But instead of generating a region within an existing image, the model generates a region outside of it. Learn more about outpainting.
+
+
+
+
+Outpainting with Stable Diffusion
+Table of contents
+
+The outpainting process
+Step 1: Find an existing image
+Step 2: Create a source image
+Step 3: Create a mask image
+Step 4: Generate the outpainted image
+Use Replicate's web interface
+Use Replicate's API
+Outpainting is the process of using an image generation model like Stable Diffusion to extend beyond the canvas of an existing image. Outpainting is very similar to inpainting, but instead of generating a region within an existing image, the model generates a region outside of it.
+
+Here's an example of an outpainted image:
+
+Input	Output
+source image	output image
+In this guide, we'll walk you through the process of creating your own outpainted images from scratch using Stable Diffusion SDXL.
+
+🧑‍🎨
+Check out outpainter.app to easily generate your own outpainted images.
+
+The outpainting process
+At a high level, outpainting works like this:
+
+Choose an existing image you'd like to outpaint.
+Create a source image that places your original image within a larger canvas.
+Create a black and white mask image.
+Use your source image, your mask image, and a text prompt as inputs to Stable Diffusion to generate a new image.
+
+🍿 Watch our inpainting and outpainting guide on YouTube
+
+Step 1: Find an existing image
+The first step is to find an image you'd like to outpaint. This can be any image you want, like a photograph, a painting, or an image generated by an AI model like Stable Diffusion.
+
+Here's an example of an image to outpaint, an AI-generated armchair in the shape of an avocado:
+
+source image
+The image here has square dimensions, but your image can have any aspect ratio.
+
+Step 2: Create a source image
+Once you've found an image you want to outpaint, you need to place it within a larger canvas so the image model will have space to paint around it. You can do this with traditional raster image editing software like Photoshop or GIMP, but since you won't actually be doing any manual bitmap-based editing of the image, you can also use web-based vector drawing tools like Figma or Canva to achieve the same result.
+
+Create a new square image, and place your original image within it. 1024x1024 is ideal if you're using the SDXL version of Stable Diffusion, as you will in this guide. For more info about image sizing and dimensions, see the docs on width and height.
+
+In the example image below, there's a checkboard pattern to indicate the "transparent" parts of the canvas that will be outpainted, but the checkboard is not actually neccessary. You can choose any color you like for the surrounding canvas, but it's a good idea to choose a color that's similar to the color of the image you're outpainting. This will help the model generate a more seamless transition between the original image and the outpainted region.
+
+It should look something like this:
+
+source image
+☝️ Here the original image is centered in the middle of the canvas, but you can place it anywhere you like depending on which part of the canvas you'd like to outpaint. These are also perfectly valid arrangements:
+
+source image
+Save this image as a JPG or PNG file. Give it a name like outpainting-source.jpg or outpainting-source.png so you can easily identify it later.
+
+Step 3: Create a mask image
+Next, you'll generate a mask image. This is a black and white image that tells the model which parts of the image to preserve, and which parts to generate new content for. Again you can use any image editing tool you like do to do this, as long as it can save JPG or PNG files.
+
+Use the same dimensions for your mask image as you did for your source image: 1024x1024 square. The mask image should be black and white, with the black areas representing the parts of the image you want preserve, and the white areas representing the parts of the image you want to generate new content for.
+
+If you can't easily remember which parts should be black and which should be white, try asking ChatGPT to create a mnemonic for you. Here's one:
+
+Keep the Night, Replace the Light
+
+For our centered avocado armchair, the mask image should look something like this:
+
+source image
+☝️ Important! Be sure to draw your mask slightly smaller than the source image. This will help the model generate a more seamless visual transition between the original image and the outpainted region. It will also prevent an unwanted visible line from being drawn between the original image and the outpainted region.
+
+Save this image as a JPG or PNG file. Give it a name like outpainting-mask.jpg or outpainting-mask.png so you can easily identify it later.
+
+Step 4: Generate the outpainted image
+Now that you've generated your source image and mask image, you're ready to generate the outpainted image. There are many models that support outpainting, but in this guide you'll use the SDXL version of Stable Diffusion to generate your outpainted image.
+
+The inputs you'll provide to stable diffusion are:
+
+prompt: A short string of text describing the image you'd like to generate. To see what your avocado armchair would look like if it were in a larger room, use a prompt like "an armchair in a room full of plants".
+image: The source image you created in step 2.
+mask: The mask image you created in step 3.
+Use Replicate's web interface
+To generate your outpainted image using Replicate's web interface, follow this link, replacing the image, mask, and prompt inputs with your own values. The web UI makes it easy to drag and drop your image and mask files right into the browser window.
+
+Use Replicate's API
+To generate your outpainted image using Replicate's API, you can use whatever programming language you prefer, but in this guide we'll use Python.
+
+Start by setting up the Python client, then run this code:
+
+
+Copy
+import replicate
+output = replicate.run(
+  "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+  input={
+    "prompt": "an armchair in a room full of plants",
+    "image": open("path/to/outpainting-source.jpg", "rb"),
+    "mask": open("path/to/outpainting-mask.jpg", "rb")
+  }
+)
+print(output)
+The resulting image should look something like this:
+
+source image
+Now that you've generated your first outpainted image, it's time to iterate. Refine the prompt, adjust the mask, and try again. This is where the API really shines, because you can easily write code to run the model multiple times with different inputs to see what works best.
+
+Happy outpainting! 🥑
+
+
+
+Using ControlNet with Stable Diffusion
+Table of contents
+
+How does ControlNet work?
+Types of conditioning images
+Canny — Edge detection
+HED — Fuzzy edge detection
+M-LSD — Straight line detection
+Depth Map
+Open pose (aka Human pose)
+Scribble
+Segmentation
+Normal map
+How to use ControlNet
+ControlNet is a method for conforming your image generations to a particular structure. It's easiest explained by an example.
+
+Let's say you wanted to create an image of a particular pose—a photo like the man below, but we want a boy doing it.
+
+a man in a suit
+This is a really hard problem with default stable diffusion. We could try a prompt that describes our desired pose in detail, like this:
+
+a photo of a boy wearing a blue jacket looking to his right with his left arm slightly above his right
+
+But this probably isn't going to work. Our outputs aren't going to conform to all these instructions, and even if we got lucky and they did, we won't be able to consistently generate this pose. (why? -- my guess is because the decoder can only conform to so much? or maybe this is possible, it's just a pain?)
+
+Enter ControlNet. ControlNet models accept two inputs:
+
+A text prompt: a boy wearing a blue jacket
+
+And a conditioning image. There are lots of types, but for now let's use a stick figure (often called human pose):
+
+stick figure
+The model then uses our pose to conform/shape/control our image into our desired structure:
+
+boy
+Let's try changing our prompt, but keep the pose input the same:
+
+"chef in kitchen"
+
+chef
+"Lincoln statue"
+
+lincoln
+Source: ControlNet paper
+
+And voila! We can create all kinds of images that are guided by the stick figure pose.
+
+That's the essence of ControlNet. We always provide two inputs: a text prompt (just like normal Stable Diffusion) and a conditioning image. The output is guided by our conditioning image.
+
+diagram
+Importantly, the conditioning image isn't restricted to stick figure poses. We can provide all kinds of custom compositions for the ControlNet model to follow, like edges, depths, scribbles, segmentation and many other structures. More on that later.
+
+How does ControlNet work?
+ControlNet was created by Stanford researchers and announced in the paper Adding Conditional Control to Text-to-Image Diffusion Models.
+
+It's trained on top of stable diffusion, so the flexibility and aesthetic of stable diffusion is still there.
+
+I don't want to go too in depth, but training ControlNet involves using conditioning images to teach the model how to generate images according to specific conditions. These conditioning images act like guidelines or templates. For example, if the model is to learn how to generate images of cats, it might be trained with a variety of images showing cats in different poses or environments. Alongside these images, text prompts are used to describe the scene or the object. This combination of visual and textual input helps the model understand not just what to draw (from the text) but also how to draw it (from the conditioning images).
+
+To learn more, check out the paper. Or do what I did, and upload the paper to ChatGPT and ask it a bunch of questions.
+
+Types of conditioning images
+🍿
+Watch this section on YouTube
+
+There are many types of conditioning_image's we can use in ControlNet. We're not restricted to our human pose. We can guide our images using edge detectors, depth maps, segmentation, sketchs, and more.
+
+types
+The best way to see how each of these work is by example.
+
+Let's run a selection of conditioners on the following two images with completely new prompts.
+
+Cyberpunk Couple New prompt:
+
+
+Copy
+couple embracing, summer clothes,
+color photo, 50mm prime, canon, studio
+portrait
+couple
+Tea Room New prompt:
+
+
+Copy
+a photo of a beautiful cyberpunk
+cafe, dawn light, warm tones,
+morning scene, windows
+tea
+Let's see what happens when we apply different ControlNets on these two images. In other words, let's go through this process for each type of conditioner:
+
+process
+Canny — Edge detection
+Canny is a widely used edge detector.
+
+Here's our tea room after going through the Canny pre-processor:
+
+tearoomcanny
+Remember our prompt from earlier?
+
+
+Copy
+"a photo of a beautiful cyberpunk
+cafe, dawn light, warm tones,
+morning scene, windows"
+Now, when we generate an image with our new prompt, ControlNet will generate an image based on this prompt, but guided by the Canny edge detection: Result
+
+result
+Here's that same process applied to our image of the couple, with our new prompt:
+
+couple1
+HED — Fuzzy edge detection
+HED is another kind of edge detector. Here's our pre-processed output:
+
+tearoomhed-room
+And here's our output:
+
+hed-room output
+The effect of HED is a bit more clear on our cyberpunk couple:
+
+hed couple
+Note that many details that were lost in the Canny version are present in HED detection, like her hand placement, the angle of the overhead light, and her headpiece. Note also where HED struggles—his collar becomes a streak of hair, and her makeup becomes a shadow. HED works really well for painting and art.
+
+M-LSD — Straight line detection
+M-LSD is another kind of edge detection that only works on straight lines. Here's M-LSD on our tea room:
+
+tea3mlsd
+And on our cyberpunk couple:
+
+mlsd-couple
+As you can tell, M-LSD doesn't work well here—there aren't many straight lines in the original.
+
+Depth Map
+A depth map works by simulating the distance of parts of the image from the camera. Here's what it looks like:
+
+tearoomdepth roomdepth room output
+This works really well on our tea room. The frames, plants, tables and pillows are all preserved. Let's try it on our couple:
+
+depth couple
+Again, the composition is preserved, but it struggles with the collar and hands.
+
+Open pose (aka Human pose)
+This one should be familiar to you! Open pose/human pose turns images of people into stick figures. Let's try it on our couple:
+
+pose couple
+The colored bars are representations of the body parts of our characters. You can see that the poses are preserved, but the detail and style is lost.
+
+Scribble
+Scribble is behind the very popular "turn a sketch into a drawing" apps. I'm going to use a different example for scribble, because it works best with a doodle input conditioner. For example, here's a doodle of a cat alongside my text prompt, "an oil painting of a cat":
+
+cat
+Here's the same with an owl:
+
+owl
+Segmentation
+Segmentation breaks our image down into different segments.
+
+tearoomsegment roomsegment room output
+We've maintained the plants, the frames, and the table, but the output is quite different. There's a bit of a fish eye effect, and we've lost the pillars in the cafe. Here's segmentation on our couple.
+
+segment couple
+Normal map
+A normal map detects the texture of an image.
+
+tearoomsegment roomsegment room output
+This is a nice output, but it doesn't preserve our original input at all. A normal map works much better on our couple:
+
+segment room output
+How to use ControlNet
+Using ControlNet is easy with Replicate 😎. We have a collection of ControlNet models here.
+
+collection
+You can get started by choosing a ControlNet model and playing around with it in our GUI. If you're a developer and want to integrate ControlNet into your app, click the API tab and you'll be able to copy and paste the API request into your codebase. Happy hacking!
+
+guide
+
+Fast Stable Diffusion: Turbo and latent consistency models (LCMs)
+Table of contents
+
+Latent consistency models (LCM)
+LCM LoRAs
+Wait, aren’t LoRAs used for styles and object fine-tuning?
+SDXL Turbo and SD Turbo
+Community optimisation
+You might have noticed that Stable Diffusion is now fast. Very fast. 8 frames per second, then 70fps, now reports of over 100fps, on consumer hardware.
+
+Today you can do realtime image-to-image painting, and write prompts that return images before you’re done typing. There’s a whole new suite of applications for generative imagery. And other models, like text-to-video, will soon apply these techniques too.
+
+In this guide we’ll aim to explain the different models, terms used and some of the techniques that are powering this speed-up.
+
+Let’s start with latent consistency models, or LCMs. They started it all, and they brought about the first realtime painting apps, like Krea AI popularised.
+
+Latent consistency models (LCM)
+In October 2023, Simian Luo et al. released the first latent consistency model and we blogged about how to run it on a Mac and make 1 image per second. You can also run it on Replicate.
+
+What made it so fast is that it needs only 4 to 8 steps to make a good image. This compares with 20 to 30 for regular Stable Diffusion. LCMs can do this because they are designed to directly predict the reverse diffusion outcome in latent space. Essentially, this means they get to the good pictures faster. Dig into their research paper if you want to learn more.
+
+The latent consistency model that was released, the one based on a Stable Diffusion 1.5 finetune called Dreamshaper, is very fast. But what about other models? How can we speed them up?
+
+One of the big drawbacks with LCMs is the way these models are made – in a process called distillation. The LCM must be distilled from a pre-trained text to image model. Distillation is a training process that needs ~650K text-image pairs and 32 hours of A100 compute. The authors distillation code also hasn’t been released.
+
+LoRAs to the rescue.
+
+LCM LoRAs
+In November 2023, a new innovation followed – Huggingface blogged about a way to get all the benefits of LCM for any Stable Diffusion model or fine-tune, without needing to train a new distilled model. Full details are in their paper.
+
+They did this by training an “LCM LoRA”. A much faster training process that can capture the speed-ups of LCM by training just a few LoRA layers.
+
+You can experiment with these LoRAs using models on Replicate:
+
+SDXL + LCM LoRA
+SDXL + LCM LoRA with controlnet
+Suddenly we have very fast 4 step inference for SDXL, SD 1.5, and all the fine tunes that go with them. On a Mac, where a 1024x1024 image would take upwards of 1 minute, it’s now ready in just 6 seconds.
+
+There is a downside though. The images these LCM LoRAs generate are lower quality, and need more specific prompting to get good results.
+
+You also need to use a guidance scale of 0 (ie turning it off) or between 1 and 2. Go outside of these ranges and your images will look terrible.
+
+Wait, aren’t LoRAs used for styles and object fine-tuning?
+Yes. They both use the same LoRA approach, but to achieve different goals. One changes an image style, the other makes images faster.
+
+LoRA (Low-Rank-Adaptation) is a general technique that accelerates the fine-tuning of models by training smaller matrices. These then get loaded into an unchanged base model to apply their affect.
+
+SDXL Turbo and SD Turbo
+On November 28 2023 Stability AI announced “SDXL Turbo” (and more quietly its partner, SD Turbo). Now SDXL images can be made in just 1 step. Down from 50 steps, and also down from LCM LoRA’s 4 steps.
+
+On an A100, SDXL Turbo generates a 512x512 image in 207ms (prompt encoding + a single denoising step + decoding, fp16), where 67ms are accounted for by a single UNet forward evaluation.
+
+Stability AI achieved this using a new technique called Adversarial Diffusion Distillation (ADD). The adversarial aspect is worth highlighting. During training the model aims to fool a discriminator into thinking its generations are real images. This forces the model to generate real looking images at every step, without any of the common AI distortions or blurriness you get with early steps in traditional diffusion models.
+
+Read the full research paper, where the distillation process is also explained.
+
+You can download the turbo models from Huggingface:
+
+SDXL Turbo
+SD Turbo
+They can only be used for research purposes.
+
+Community optimization
+
+
+Run a model
+Table of contents
+
+Run a model on the web
+Run a model with the API
+Warm models
+You can run models on Replicate using the web or the API.
+
+Run a model on the web
+Every model on Replicate has its own "playground" page with a web form for running the model. The playground is a good place to start when trying out a model for the first time. It gives you a visual view of all the inputs to the model, and generates a form for running the model right from your browser:
+
+Replicate's web playground UI for running models in the browser
+Once you've tried out a model in the playground, you can easily run the model from your own code using the API.
+
+Run a model with the API
+The web playground is great for getting acquainted with a model, but when you’re ready to integrate a model into something like a chat bot, website, or mobile app, you'll want to use the API.
+
+Our HTTP API can be used with any programming language, but there are also client libraries for Python, JavaScript, and other languages that make it easier to use the API.
+
+Using the Python client, you can create predictions with just a few lines of code:
+
+
+Copy
+import replicate
+output = replicate.run(
+    "black-forest-labs/flux-schnell",
+    input={"prompt": "an astronaut riding a horse"}
+)
+print(output)
+The JavaScript client works similarly:
+
+
+Copy
+import Replicate from "replicate";
+const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+const model =
+  "black-forest-labs/flux-schnell";
+const input = {
+  prompt: "a 19th century portrait of a raccoon gentleman wearing a suit",
+};
+const output = await replicate.run(model, { input });
+console.log(output);
+For more details on how to run models with the API, including how to use sync and async modes, webhooks, polling, etc, see Create a prediction.
+
+Warm models
+We have a huge catalogue of models. To make good use of resources, we only run the models that are actually being used. When a model hasn't been used for a little while, we turn it off.
+
+When you make a request to run a prediction on a model, you'll get a fast response if the model is "warm" (already running), and a slower response if the model is "cold" (starting up). Machine learning models are often very large and resource intensive, and we have to fetch and load several gigabytes of code for some models. In some cases this process can take several minutes.
+
+Cold boots can also happen when there's a big spike in demand. We autoscale by running multiple copies of a model on different machines, but the model can take a while to become ready.
+
+For popular public models, cold boots are uncommon because the model is kept "warm" from all the activity. For less-frequently used models, cold boots are more frequent.
+
+If you're using the API to create predictions in the background, then cold boots probably aren't a big deal: we only charge for the time that your prediction is actually running, so it doesn't affect your costs.
+
+
+
+Authentication
+All API requests must include a valid API token in the Authorization request header. The token must be prefixed by "Bearer", followed by a space and the token value. Example: Authorization: Bearer r8_Hw*********************************** Find your tokens at https://replicate.com/account/api-tokens
+
+Get the authenticated account
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/account
+Description
+Returns information about the user or organization associated with the provided API token.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/account
+The response will be a JSON object describing the account:
+
+
+Copy
+{
+  "type": "organization",
+  "username": "acme",
+  "name": "Acme Corp, Inc.",
+  "github_url": "https://github.com/acme",
+}
+List collections of models
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/collections
+Description
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/collections
+The response will be a paginated JSON list of collection objects:
+
+
+Copy
+{
+  "next": "null",
+  "previous": null,
+  "results": [
+    {
+      "name": "Super resolution",
+      "slug": "super-resolution",
+      "description": "Upscaling models that create high-quality images from low-quality images."
+    }
+  ]
+}
+Get a collection of models
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/collections/{collection_slug}
+Description
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/collections/super-resolution
+The response will be a collection object with a nested list of the models in that collection:
+
+
+Copy
+{
+  "name": "Super resolution",
+  "slug": "super-resolution",
+  "description": "Upscaling models that create high-quality images from low-quality images.",
+  "models": [...]
+}
+URL Parameters
+collection_slug
+string
+Required
+The slug of the collection, like super-resolution or image-restoration. See replicate.com/collections.
+List deployments
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/deployments
+Description
+Get a list of deployments associated with the current account, including the latest release configuration for each deployment.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/deployments
+The response will be a paginated JSON array of deployment objects, sorted with the most recent deployment first:
+
+
+Copy
+{
+  "next": "http://api.replicate.com/v1/deployments?cursor=cD0yMDIzLTA2LTA2KzIzJTNBNDAlM0EwOC45NjMwMDAlMkIwMCUzQTAw",
+  "previous": null,
+  "results": [
+    {
+      "owner": "replicate",
+      "name": "my-app-image-generator",
+      "current_release": {
+        "number": 1,
+        "model": "stability-ai/sdxl",
+        "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+        "created_at": "2024-02-15T16:32:57.018467Z",
+        "created_by": {
+          "type": "organization",
+          "username": "acme",
+          "name": "Acme Corp, Inc.",
+          "github_url": "https://github.com/acme",
+        },
+        "configuration": {
+          "hardware": "gpu-t4",
+          "min_instances": 1,
+          "max_instances": 5
+        }
+      }
+    }
+  ]
+}
+Create a deployment
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/deployments
+Description
+Create a new deployment:
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -X POST \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "name": "my-app-image-generator",
+        "model": "stability-ai/sdxl",
+        "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+        "hardware": "gpu-t4",
+        "min_instances": 0,
+        "max_instances": 3
+      }' \
+  https://api.replicate.com/v1/deployments
+The response will be a JSON object describing the deployment:
+
+
+Copy
+{
+  "owner": "acme",
+  "name": "my-app-image-generator",
+  "current_release": {
+    "number": 1,
+    "model": "stability-ai/sdxl",
+    "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+    "created_at": "2024-02-15T16:32:57.018467Z",
+    "created_by": {
+      "type": "organization",
+      "username": "acme",
+      "name": "Acme Corp, Inc.",
+      "github_url": "https://github.com/acme",
+    },
+    "configuration": {
+      "hardware": "gpu-t4",
+      "min_instances": 1,
+      "max_instances": 5
+    }
+  }
+}
+Request Body
+hardware
+string
+Required
+The SKU for the hardware used to run the model. Possible values can be retrieved from the hardware.list endpoint.
+max_instances
+integer
+Required
+The maximum number of instances for scaling.
+min_instances
+integer
+Required
+The minimum number of instances for scaling.
+model
+string
+Required
+The full name of the model that you want to deploy e.g. stability-ai/sdxl.
+name
+string
+Required
+The name of the deployment.
+version
+string
+Required
+The 64-character string ID of the model version that you want to deploy.
+Delete a deployment
+Endpoint
+
+Copy
+DELETE https://api.replicate.com/v1/deployments/{deployment_owner}/{deployment_name}
+Description
+Delete a deployment
+
+Deployment deletion has some restrictions:
+
+You can only delete deployments that have been offline and unused for at least 15 minutes.
+Example cURL request:
+
+
+Copy
+curl -s -X DELETE \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/deployments/acme/my-app-image-generator
+The response will be an empty 204, indicating the deployment has been deleted.
+
+URL Parameters
+deployment_owner
+string
+Required
+The name of the user or organization that owns the deployment.
+deployment_name
+string
+Required
+The name of the deployment.
+Get a deployment
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/deployments/{deployment_owner}/{deployment_name}
+Description
+Get information about a deployment by name including the current release.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/deployments/replicate/my-app-image-generator
+The response will be a JSON object describing the deployment:
+
+
+Copy
+{
+  "owner": "acme",
+  "name": "my-app-image-generator",
+  "current_release": {
+    "number": 1,
+    "model": "stability-ai/sdxl",
+    "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+    "created_at": "2024-02-15T16:32:57.018467Z",
+    "created_by": {
+      "type": "organization",
+      "username": "acme",
+      "name": "Acme Corp, Inc.",
+      "github_url": "https://github.com/acme",
+    },
+    "configuration": {
+      "hardware": "gpu-t4",
+      "min_instances": 1,
+      "max_instances": 5
+    }
+  }
+}
+URL Parameters
+deployment_owner
+string
+Required
+The name of the user or organization that owns the deployment.
+deployment_name
+string
+Required
+The name of the deployment.
+Update a deployment
+Endpoint
+
+Copy
+PATCH https://api.replicate.com/v1/deployments/{deployment_owner}/{deployment_name}
+Description
+Update properties of an existing deployment, including hardware, min/max instances, and the deployment's underlying model version.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -X PATCH \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"min_instances": 3, "max_instances": 10}' \
+  https://api.replicate.com/v1/deployments/acme/my-app-image-generator
+The response will be a JSON object describing the deployment:
+
+
+Copy
+{
+  "owner": "acme",
+  "name": "my-app-image-generator",
+  "current_release": {
+    "number": 2,
+    "model": "stability-ai/sdxl",
+    "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+    "created_at": "2024-02-15T16:32:57.018467Z",
+    "created_by": {
+      "type": "organization",
+      "username": "acme",
+      "name": "Acme Corp, Inc.",
+      "github_url": "https://github.com/acme",
+    },
+    "configuration": {
+      "hardware": "gpu-t4",
+      "min_instances": 3,
+      "max_instances": 10
+    }
+  }
+}
+Updating any deployment properties will increment the number field of the current_release.
+
+URL Parameters
+deployment_owner
+string
+Required
+The name of the user or organization that owns the deployment.
+deployment_name
+string
+Required
+The name of the deployment.
+Request Body
+hardware
+string
+The SKU for the hardware used to run the model. Possible values can be retrieved from the hardware.list endpoint.
+max_instances
+integer
+The maximum number of instances for scaling.
+min_instances
+integer
+The minimum number of instances for scaling.
+version
+string
+The ID of the model version that you want to deploy
+Create a prediction using a deployment
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/deployments/{deployment_owner}/{deployment_name}/predictions
+Description
+Create a prediction for the deployment and inputs you provide.
+
+Example cURL request:
+
+
+Copy
+curl -s -X POST -H 'Prefer: wait' \
+  -d '{"input": {"prompt": "A photo of a bear riding a bicycle over the moon"}}' \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  https://api.replicate.com/v1/deployments/acme/my-app-image-generator/predictions
+The request will wait up to 60 seconds for the model to run. If this time is exceeded the prediction will be returned in a "starting" state and need to be retrieved using the predictions.get endpiont.
+
+For a complete overview of the deployments.predictions.create API check out our documentation on creating a prediction which covers a variety of use cases.
+
+URL Parameters
+deployment_owner
+string
+Required
+The name of the user or organization that owns the deployment.
+deployment_name
+string
+Required
+The name of the deployment.
+Headers
+Prefer
+string
+When you provide the Prefer: wait header, the request will block and wait up to 60 seconds for the model to finish generating output. The output will be included in the output field of the prediction response, so you don't need to use webhooks or polling to retrieve it.
+
+You can specify a shorter timeout duration if needed. For example, Prefer: wait=5 will wait for 5 seconds instead of the default 60 seconds.
+
+If the model doesn't finish within the specified duration, the request will return the incomplete prediction object with status set to starting or processing. You can then fetch the prediction again via the URL provided in the Location header, or the urls.get field in the JSON response. Even if the timeout is exceeded, the prediction will continue processing in the background.
+
+The Prefer header is not enabled by default. If you don't include this header in your request, the response will immediately return the prediction in a starting state.
+
+Request Body
+input
+object
+Required
+The model's input as a JSON object. The input schema depends on what model you are running. To see the available inputs, click the "API" tab on the model you are running or get the model version and look at its openapi_schema property. For example, stability-ai/sdxl takes prompt as an input.
+
+Files should be passed as HTTP URLs or data URLs.
+
+Use an HTTP URL when:
+
+you have a large file > 256kb
+you want to be able to use the file multiple times
+you want your prediction metadata to be associable with your input files
+Use a data URL when:
+
+you have a small file <= 256kb
+you don't want to upload and host the file somewhere
+you don't need to use the file again (Replicate will not store it)
+stream
+boolean
+This field is deprecated.
+
+Request a URL to receive streaming output using server-sent events (SSE).
+
+This field is no longer needed as the returned prediction will always have a stream entry in its url property if the model supports streaming.
+
+webhook
+string
+An HTTPS URL for receiving a webhook when the prediction has new output. The webhook will be a POST request where the request body is the same as the response body of the get prediction operation. If there are network problems, we will retry the webhook a few times, so make sure it can be safely called more than once. Replicate will not follow redirects when sending webhook requests to your service, so be sure to specify a URL that will resolve without redirecting.
+
+webhook_events_filter
+array
+By default, we will send requests to your webhook URL whenever there are new outputs or the prediction has finished. You can change which events trigger webhook requests by specifying webhook_events_filter in the prediction request:
+
+start: immediately on prediction start
+output: each time a prediction generates an output (note that predictions can generate multiple outputs)
+logs: each time log output is generated by a prediction
+completed: when the prediction reaches a terminal state (succeeded/canceled/failed)
+For example, if you only wanted requests to be sent at the start and end of the prediction, you would provide:
+
+{
+  "input": {
+    "text": "Alice"
+  },
+  "webhook": "https://example.com/my-webhook",
+  "webhook_events_filter": ["start", "completed"]
+}
+Requests for event types output and logs will be sent at most once every 500ms. If you request start and completed webhooks, then they'll always be sent regardless of throttling.
+
+List available hardware for models
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/hardware
+Description
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/hardware
+The response will be a JSON array of hardware objects:
+
+
+Copy
+[
+    {"name": "CPU", "sku": "cpu"},
+    {"name": "Nvidia T4 GPU", "sku": "gpu-t4"},
+    {"name": "Nvidia A40 GPU", "sku": "gpu-a40-small"},
+    {"name": "Nvidia A40 (Large) GPU", "sku": "gpu-a40-large"},
+]
+List public models
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/models
+Description
+Get a paginated list of public models.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/models
+The response will be a paginated JSON array of model objects:
+
+
+Copy
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "url": "https://replicate.com/acme/hello-world",
+      "owner": "acme",
+      "name": "hello-world",
+      "description": "A tiny model that says hello",
+      "visibility": "public",
+      "github_url": "https://github.com/replicate/cog-examples",
+      "paper_url": null,
+      "license_url": null,
+      "run_count": 5681081,
+      "cover_image_url": "...",
+      "default_example": {...},
+      "latest_version": {...}
+    }
+  ]
+}
+The cover_image_url string is an HTTPS URL for an image file. This can be:
+
+An image uploaded by the model author.
+The output file of the example prediction, if the model author has not set a cover image.
+The input file of the example prediction, if the model author has not set a cover image and the example prediction has no output file.
+A generic fallback image.
+Create a model
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/models
+Description
+Create a model.
+
+Example cURL request:
+
+
+Copy
+curl -s -X POST \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"owner": "alice", "name": "my-model", "description": "An example model", "visibility": "public", "hardware": "cpu"}' \
+  https://api.replicate.com/v1/models
+The response will be a model object in the following format:
+
+
+Copy
+{
+  "url": "https://replicate.com/alice/my-model",
+  "owner": "alice",
+  "name": "my-model",
+  "description": "An example model",
+  "visibility": "public",
+  "github_url": null,
+  "paper_url": null,
+  "license_url": null,
+  "run_count": 0,
+  "cover_image_url": null,
+  "default_example": null,
+  "latest_version": null,
+}
+Note that there is a limit of 1,000 models per account. For most purposes, we recommend using a single model and pushing new versions of the model as you make changes to it.
+
+Request Body
+hardware
+string
+Required
+The SKU for the hardware used to run the model. Possible values can be retrieved from the hardware.list endpoint.
+name
+string
+Required
+The name of the model. This must be unique among all models owned by the user or organization.
+owner
+string
+Required
+The name of the user or organization that will own the model. This must be the same as the user or organization that is making the API request. In other words, the API token used in the request must belong to this user or organization.
+visibility
+string
+Required
+Whether the model should be public or private. A public model can be viewed and run by anyone, whereas a private model can be viewed and run only by the user or organization members that own the model.
+cover_image_url
+string
+A URL for the model's cover image. This should be an image file.
+description
+string
+A description of the model.
+github_url
+string
+A URL for the model's source code on GitHub.
+license_url
+string
+A URL for the model's license.
+paper_url
+string
+A URL for the model's paper.
+Search public models
+Endpoint
+
+Copy
+QUERY https://api.replicate.com/v1/models
+Description
+Get a list of public models matching a search query.
+
+Example cURL request:
+
+
+Copy
+curl -s -X QUERY \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H "Content-Type: text/plain" \
+  -d "hello" \
+  https://api.replicate.com/v1/models
+The response will be a paginated JSON object containing an array of model objects:
+
+
+Copy
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "url": "https://replicate.com/acme/hello-world",
+      "owner": "acme",
+      "name": "hello-world",
+      "description": "A tiny model that says hello",
+      "visibility": "public",
+      "github_url": "https://github.com/replicate/cog-examples",
+      "paper_url": null,
+      "license_url": null,
+      "run_count": 5681081,
+      "cover_image_url": "...",
+      "default_example": {...},
+      "latest_version": {...}
+    }
+  ]
+}
+The cover_image_url string is an HTTPS URL for an image file. This can be:
+
+An image uploaded by the model author.
+The output file of the example prediction, if the model author has not set a cover image.
+The input file of the example prediction, if the model author has not set a cover image and the example prediction has no output file.
+A generic fallback image.
+Delete a model
+Endpoint
+
+Copy
+DELETE https://api.replicate.com/v1/models/{model_owner}/{model_name}
+Description
+Delete a model
+
+Model deletion has some restrictions:
+
+You can only delete models you own.
+You can only delete private models.
+You can only delete models that have no versions associated with them. Currently you'll need to delete the model's versions before you can delete the model itself.
+Example cURL request:
+
+
+Copy
+curl -s -X DELETE \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/models/replicate/hello-world
+The response will be an empty 204, indicating the model has been deleted.
+
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+Get a model
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/models/{model_owner}/{model_name}
+Description
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/models/replicate/hello-world
+The response will be a model object in the following format:
+
+
+Copy
+{
+  "url": "https://replicate.com/replicate/hello-world",
+  "owner": "replicate",
+  "name": "hello-world",
+  "description": "A tiny model that says hello",
+  "visibility": "public",
+  "github_url": "https://github.com/replicate/cog-examples",
+  "paper_url": null,
+  "license_url": null,
+  "run_count": 5681081,
+  "cover_image_url": "...",
+  "default_example": {...},
+  "latest_version": {...},
+}
+The cover_image_url string is an HTTPS URL for an image file. This can be:
+
+An image uploaded by the model author.
+The output file of the example prediction, if the model author has not set a cover image.
+The input file of the example prediction, if the model author has not set a cover image and the example prediction has no output file.
+A generic fallback image.
+The default_example object is a prediction created with this model.
+
+The latest_version object is the model's most recently pushed version.
+
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+Create a prediction using an official model
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/models/{model_owner}/{model_name}/predictions
+Description
+Create a prediction for the deployment and inputs you provide.
+
+Example cURL request:
+
+
+Copy
+curl -s -X POST -H 'Prefer: wait' \
+  -d '{"input": {"prompt": "Write a short poem about the weather."}}' \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  https://api.replicate.com/v1/models/meta/meta-llama-3-70b-instruct/predictions
+The request will wait up to 60 seconds for the model to run. If this time is exceeded the prediction will be returned in a "starting" state and need to be retrieved using the predictions.get endpiont.
+
+For a complete overview of the deployments.predictions.create API check out our documentation on creating a prediction which covers a variety of use cases.
+
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+Headers
+Prefer
+string
+When you provide the Prefer: wait header, the request will block and wait up to 60 seconds for the model to finish generating output. The output will be included in the output field of the prediction response, so you don't need to use webhooks or polling to retrieve it.
+
+You can specify a shorter timeout duration if needed. For example, Prefer: wait=5 will wait for 5 seconds instead of the default 60 seconds.
+
+If the model doesn't finish within the specified duration, the request will return the incomplete prediction object with status set to starting or processing. You can then fetch the prediction again via the URL provided in the Location header, or the urls.get field in the JSON response. Even if the timeout is exceeded, the prediction will continue processing in the background.
+
+The Prefer header is not enabled by default. If you don't include this header in your request, the response will immediately return the prediction in a starting state.
+
+Request Body
+input
+object
+Required
+The model's input as a JSON object. The input schema depends on what model you are running. To see the available inputs, click the "API" tab on the model you are running or get the model version and look at its openapi_schema property. For example, stability-ai/sdxl takes prompt as an input.
+
+Files should be passed as HTTP URLs or data URLs.
+
+Use an HTTP URL when:
+
+you have a large file > 256kb
+you want to be able to use the file multiple times
+you want your prediction metadata to be associable with your input files
+Use a data URL when:
+
+you have a small file <= 256kb
+you don't want to upload and host the file somewhere
+you don't need to use the file again (Replicate will not store it)
+stream
+boolean
+This field is deprecated.
+
+Request a URL to receive streaming output using server-sent events (SSE).
+
+This field is no longer needed as the returned prediction will always have a stream entry in its url property if the model supports streaming.
+
+webhook
+string
+An HTTPS URL for receiving a webhook when the prediction has new output. The webhook will be a POST request where the request body is the same as the response body of the get prediction operation. If there are network problems, we will retry the webhook a few times, so make sure it can be safely called more than once. Replicate will not follow redirects when sending webhook requests to your service, so be sure to specify a URL that will resolve without redirecting.
+
+webhook_events_filter
+array
+By default, we will send requests to your webhook URL whenever there are new outputs or the prediction has finished. You can change which events trigger webhook requests by specifying webhook_events_filter in the prediction request:
+
+start: immediately on prediction start
+output: each time a prediction generates an output (note that predictions can generate multiple outputs)
+logs: each time log output is generated by a prediction
+completed: when the prediction reaches a terminal state (succeeded/canceled/failed)
+For example, if you only wanted requests to be sent at the start and end of the prediction, you would provide:
+
+{
+  "input": {
+    "text": "Alice"
+  },
+  "webhook": "https://example.com/my-webhook",
+  "webhook_events_filter": ["start", "completed"]
+}
+Requests for event types output and logs will be sent at most once every 500ms. If you request start and completed webhooks, then they'll always be sent regardless of throttling.
+
+List model versions
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/models/{model_owner}/{model_name}/versions
+Description
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/models/replicate/hello-world/versions
+The response will be a JSON array of model version objects, sorted with the most recent version first:
+
+
+Copy
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+      "created_at": "2022-04-26T19:29:04.418669Z",
+      "cog_version": "0.3.0",
+      "openapi_schema": {...}
+    }
+  ]
+}
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+Delete a model version
+Endpoint
+
+Copy
+DELETE https://api.replicate.com/v1/models/{model_owner}/{model_name}/versions/{version_id}
+Description
+Delete a model version and all associated predictions, including all output files.
+
+Model version deletion has some restrictions:
+
+You can only delete versions from models you own.
+You can only delete versions from private models.
+You cannot delete a version if someone other than you has run predictions with it.
+You cannot delete a version if it is being used as the base model for a fine tune/training.
+You cannot delete a version if it has an associated deployment.
+You cannot delete a version if another model version is overridden to use it.
+Example cURL request:
+
+
+Copy
+curl -s -X DELETE \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/models/replicate/hello-world/versions/5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa
+The response will be an empty 202, indicating the deletion request has been accepted. It might take a few minutes to be processed.
+
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+version_id
+string
+Required
+The ID of the version.
+Get a model version
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/models/{model_owner}/{model_name}/versions/{version_id}
+Description
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/models/replicate/hello-world/versions/5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa
+The response will be the version object:
+
+
+Copy
+{
+  "id": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "created_at": "2022-04-26T19:29:04.418669Z",
+  "cog_version": "0.3.0",
+  "openapi_schema": {...}
+}
+Every model describes its inputs and outputs with OpenAPI Schema Objects in the openapi_schema property.
+
+The openapi_schema.components.schemas.Input property for the replicate/hello-world model looks like this:
+
+
+Copy
+{
+  "type": "object",
+  "title": "Input",
+  "required": [
+    "text"
+  ],
+  "properties": {
+    "text": {
+      "x-order": 0,
+      "type": "string",
+      "title": "Text",
+      "description": "Text to prefix with 'hello '"
+    }
+  }
+}
+The openapi_schema.components.schemas.Output property for the replicate/hello-world model looks like this:
+
+
+Copy
+{
+  "type": "string",
+  "title": "Output"
+}
+For more details, see the docs on Cog's supported input and output types
+
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+version_id
+string
+Required
+The ID of the version.
+Create a training
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/models/{model_owner}/{model_name}/versions/{version_id}/trainings
+Description
+Start a new training of the model version you specify.
+
+Example request body:
+
+
+Copy
+{
+  "destination": "{new_owner}/{new_name}",
+  "input": {
+    "train_data": "https://example.com/my-input-images.zip",
+  },
+  "webhook": "https://example.com/my-webhook",
+}
+Example cURL request:
+
+
+Copy
+curl -s -X POST \
+  -d '{"destination": "{new_owner}/{new_name}", "input": {"input_images": "https://example.com/my-input-images.zip"}}' \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  https://api.replicate.com/v1/models/stability-ai/sdxl/versions/da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf/trainings
+The response will be the training object:
+
+
+Copy
+{
+  "id": "zz4ibbonubfz7carwiefibzgga",
+  "model": "stability-ai/sdxl",
+  "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+  "input": {
+    "input_images": "https://example.com/my-input-images.zip"
+  },
+  "logs": "",
+  "error": null,
+  "status": "starting",
+  "created_at": "2023-09-08T16:32:56.990893084Z",
+  "urls": {
+    "cancel": "https://api.replicate.com/v1/predictions/zz4ibbonubfz7carwiefibzgga/cancel",
+    "get": "https://api.replicate.com/v1/predictions/zz4ibbonubfz7carwiefibzgga"
+  }
+}
+As models can take several minutes or more to train, the result will not be available immediately. To get the final result of the training you should either provide a webhook HTTPS URL for us to call when the results are ready, or poll the get a training endpoint until it has finished.
+
+When a training completes, it creates a new version of the model at the specified destination.
+
+To find some models to train on, check out the trainable language models collection.
+
+URL Parameters
+model_owner
+string
+Required
+The name of the user or organization that owns the model.
+model_name
+string
+Required
+The name of the model.
+version_id
+string
+Required
+The ID of the version.
+Request Body
+destination
+string
+Required
+A string representing the desired model to push to in the format {destination_model_owner}/{destination_model_name}. This should be an existing model owned by the user or organization making the API request. If the destination is invalid, the server will return an appropriate 4XX response.
+
+input
+object
+Required
+An object containing inputs to the Cog model's train() function.
+
+webhook
+string
+An HTTPS URL for receiving a webhook when the training completes. The webhook will be a POST request where the request body is the same as the response body of the get training operation. If there are network problems, we will retry the webhook a few times, so make sure it can be safely called more than once. Replicate will not follow redirects when sending webhook requests to your service, so be sure to specify a URL that will resolve without redirecting.
+webhook_events_filter
+array
+By default, we will send requests to your webhook URL whenever there are new outputs or the training has finished. You can change which events trigger webhook requests by specifying webhook_events_filter in the training request:
+
+start: immediately on training start
+output: each time a training generates an output (note that trainings can generate multiple outputs)
+logs: each time log output is generated by a training
+completed: when the training reaches a terminal state (succeeded/canceled/failed)
+For example, if you only wanted requests to be sent at the start and end of the training, you would provide:
+
+{
+  "destination": "my-organization/my-model",
+  "input": {
+    "text": "Alice"
+  },
+  "webhook": "https://example.com/my-webhook",
+  "webhook_events_filter": ["start", "completed"]
+}
+Requests for event types output and logs will be sent at most once every 500ms. If you request start and completed webhooks, then they'll always be sent regardless of throttling.
+
+List predictions
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/predictions
+Description
+Get a paginated list of predictions that you've created. This will include predictions created from the API and the website. It will return 100 records per page.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/predictions
+The response will be a paginated JSON array of prediction objects, sorted with the most recent prediction first:
+
+
+Copy
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "completed_at": "2023-09-08T16:19:34.791859Z",
+      "created_at": "2023-09-08T16:19:34.907244Z",
+      "data_removed": false,
+      "error": null,
+      "id": "gm3qorzdhgbfurvjtvhg6dckhu",
+      "input": {
+        "text": "Alice"
+      },
+      "metrics": {
+        "predict_time": 0.012683
+      },
+      "output": "hello Alice",
+      "started_at": "2023-09-08T16:19:34.779176Z",
+      "source": "api",
+      "status": "succeeded",
+      "urls": {
+        "get": "https://api.replicate.com/v1/predictions/gm3qorzdhgbfurvjtvhg6dckhu",
+        "cancel": "https://api.replicate.com/v1/predictions/gm3qorzdhgbfurvjtvhg6dckhu/cancel"
+      },
+      "model": "replicate/hello-world",
+      "version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+    }
+  ]
+}
+id will be the unique ID of the prediction.
+
+source will indicate how the prediction was created. Possible values are web or api.
+
+status will be the status of the prediction. Refer to get a single prediction for possible values.
+
+urls will be a convenience object that can be used to construct new API requests for the given prediction. If the requested model version supports streaming, this will have a stream entry with an HTTPS URL that you can use to construct an EventSource.
+
+model will be the model identifier string in the format of {model_owner}/{model_name}.
+
+version will be the unique ID of model version used to create the prediction.
+
+data_removed will be true if the input and output data has been deleted.
+
+Create a prediction
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/predictions
+Description
+Create a prediction for the model version and inputs you provide.
+
+Example cURL request:
+
+
+Copy
+curl -s -X POST -H 'Prefer: wait' \
+  -d '{"version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa", "input": {"text": "Alice"}}' \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  https://api.replicate.com/v1/predictions
+The request will wait up to 60 seconds for the model to run. If this time is exceeded the prediction will be returned in a "starting" state and need to be retrieved using the predictions.get endpiont.
+
+For a complete overview of the predictions.create API check out our documentation on creating a prediction which covers a variety of use cases.
+
+Headers
+Prefer
+string
+When you provide the Prefer: wait header, the request will block and wait up to 60 seconds for the model to finish generating output. The output will be included in the output field of the prediction response, so you don't need to use webhooks or polling to retrieve it.
+
+You can specify a shorter timeout duration if needed. For example, Prefer: wait=5 will wait for 5 seconds instead of the default 60 seconds.
+
+If the model doesn't finish within the specified duration, the request will return the incomplete prediction object with status set to starting or processing. You can then fetch the prediction again via the URL provided in the Location header, or the urls.get field in the JSON response. Even if the timeout is exceeded, the prediction will continue processing in the background.
+
+The Prefer header is not enabled by default. If you don't include this header in your request, the response will immediately return the prediction in a starting state.
+
+Request Body
+input
+object
+Required
+The model's input as a JSON object. The input schema depends on what model you are running. To see the available inputs, click the "API" tab on the model you are running or get the model version and look at its openapi_schema property. For example, stability-ai/sdxl takes prompt as an input.
+
+Files should be passed as HTTP URLs or data URLs.
+
+Use an HTTP URL when:
+
+you have a large file > 256kb
+you want to be able to use the file multiple times
+you want your prediction metadata to be associable with your input files
+Use a data URL when:
+
+you have a small file <= 256kb
+you don't want to upload and host the file somewhere
+you don't need to use the file again (Replicate will not store it)
+version
+string
+Required
+The ID of the model version that you want to run.
+stream
+boolean
+This field is deprecated.
+
+Request a URL to receive streaming output using server-sent events (SSE).
+
+This field is no longer needed as the returned prediction will always have a stream entry in its url property if the model supports streaming.
+
+webhook
+string
+An HTTPS URL for receiving a webhook when the prediction has new output. The webhook will be a POST request where the request body is the same as the response body of the get prediction operation. If there are network problems, we will retry the webhook a few times, so make sure it can be safely called more than once. Replicate will not follow redirects when sending webhook requests to your service, so be sure to specify a URL that will resolve without redirecting.
+
+webhook_events_filter
+array
+By default, we will send requests to your webhook URL whenever there are new outputs or the prediction has finished. You can change which events trigger webhook requests by specifying webhook_events_filter in the prediction request:
+
+start: immediately on prediction start
+output: each time a prediction generates an output (note that predictions can generate multiple outputs)
+logs: each time log output is generated by a prediction
+completed: when the prediction reaches a terminal state (succeeded/canceled/failed)
+For example, if you only wanted requests to be sent at the start and end of the prediction, you would provide:
+
+{
+  "version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "input": {
+    "text": "Alice"
+  },
+  "webhook": "https://example.com/my-webhook",
+  "webhook_events_filter": ["start", "completed"]
+}
+Requests for event types output and logs will be sent at most once every 500ms. If you request start and completed webhooks, then they'll always be sent regardless of throttling.
+
+Get a prediction
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/predictions/{prediction_id}
+Description
+Get the current state of a prediction.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/predictions/gm3qorzdhgbfurvjtvhg6dckhu
+The response will be the prediction object:
+
+
+Copy
+{
+  "id": "gm3qorzdhgbfurvjtvhg6dckhu",
+  "model": "replicate/hello-world",
+  "version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "input": {
+    "text": "Alice"
+  },
+  "logs": "",
+  "output": "hello Alice",
+  "error": null,
+  "status": "succeeded",
+  "created_at": "2023-09-08T16:19:34.765994Z",
+  "data_removed": false,
+  "started_at": "2023-09-08T16:19:34.779176Z",
+  "completed_at": "2023-09-08T16:19:34.791859Z",
+  "metrics": {
+    "predict_time": 0.012683
+  },
+  "urls": {
+    "cancel": "https://api.replicate.com/v1/predictions/gm3qorzdhgbfurvjtvhg6dckhu/cancel",
+    "get": "https://api.replicate.com/v1/predictions/gm3qorzdhgbfurvjtvhg6dckhu"
+  }
+}
+status will be one of:
+
+starting: the prediction is starting up. If this status lasts longer than a few seconds, then it's typically because a new worker is being started to run the prediction.
+processing: the predict() method of the model is currently running.
+succeeded: the prediction completed successfully.
+failed: the prediction encountered an error during processing.
+canceled: the prediction was canceled by its creator.
+In the case of success, output will be an object containing the output of the model. Any files will be represented as HTTPS URLs. You'll need to pass the Authorization header to request them.
+
+In the case of failure, error will contain the error encountered during the prediction.
+
+Terminated predictions (with a status of succeeded, failed, or canceled) will include a metrics object with a predict_time property showing the amount of CPU or GPU time, in seconds, that the prediction used while running. It won't include time waiting for the prediction to start.
+
+All input parameters, output values, and logs are automatically removed after an hour, by default, for predictions created through the API.
+
+You must save a copy of any data or files in the output if you'd like to continue using them. The output key will still be present, but it's value will be null after the output has been removed.
+
+Output files are served by replicate.delivery and its subdomains. If you use an allow list of external domains for your assets, add replicate.delivery and *.replicate.delivery to it.
+
+URL Parameters
+prediction_id
+string
+Required
+The ID of the prediction to get.
+Cancel a prediction
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/predictions/{prediction_id}/cancel
+URL Parameters
+prediction_id
+string
+Required
+The ID of the prediction to cancel.
+List trainings
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/trainings
+Description
+Get a paginated list of trainings that you've created. This will include trainings created from the API and the website. It will return 100 records per page.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/trainings
+The response will be a paginated JSON array of training objects, sorted with the most recent training first:
+
+
+Copy
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "completed_at": "2023-09-08T16:41:19.826523Z",
+      "created_at": "2023-09-08T16:32:57.018467Z",
+      "error": null,
+      "id": "zz4ibbonubfz7carwiefibzgga",
+      "input": {
+        "input_images": "https://example.com/my-input-images.zip"
+      },
+      "metrics": {
+        "predict_time": 502.713876
+      },
+      "output": {
+        "version": "...",
+        "weights": "..."
+      },
+      "started_at": "2023-09-08T16:32:57.112647Z",
+      "source": "api",
+      "status": "succeeded",
+      "urls": {
+        "get": "https://api.replicate.com/v1/trainings/zz4ibbonubfz7carwiefibzgga",
+        "cancel": "https://api.replicate.com/v1/trainings/zz4ibbonubfz7carwiefibzgga/cancel"
+      },
+      "model": "stability-ai/sdxl",
+      "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+    }
+  ]
+}
+id will be the unique ID of the training.
+
+source will indicate how the training was created. Possible values are web or api.
+
+status will be the status of the training. Refer to get a single training for possible values.
+
+urls will be a convenience object that can be used to construct new API requests for the given training.
+
+version will be the unique ID of model version used to create the training.
+
+Get a training
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/trainings/{training_id}
+Description
+Get the current state of a training.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/trainings/zz4ibbonubfz7carwiefibzgga
+The response will be the training object:
+
+
+Copy
+{
+  "completed_at": "2023-09-08T16:41:19.826523Z",
+  "created_at": "2023-09-08T16:32:57.018467Z",
+  "error": null,
+  "id": "zz4ibbonubfz7carwiefibzgga",
+  "input": {
+    "input_images": "https://example.com/my-input-images.zip"
+  },
+  "logs": "...",
+  "metrics": {
+    "predict_time": 502.713876
+  },
+  "output": {
+    "version": "...",
+    "weights": "..."
+  },
+  "started_at": "2023-09-08T16:32:57.112647Z",
+  "status": "succeeded",
+  "urls": {
+    "get": "https://api.replicate.com/v1/trainings/zz4ibbonubfz7carwiefibzgga",
+    "cancel": "https://api.replicate.com/v1/trainings/zz4ibbonubfz7carwiefibzgga/cancel"
+  },
+  "model": "stability-ai/sdxl",
+  "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+}
+status will be one of:
+
+starting: the training is starting up. If this status lasts longer than a few seconds, then it's typically because a new worker is being started to run the training.
+processing: the train() method of the model is currently running.
+succeeded: the training completed successfully.
+failed: the training encountered an error during processing.
+canceled: the training was canceled by its creator.
+In the case of success, output will be an object containing the output of the model. Any files will be represented as HTTPS URLs. You'll need to pass the Authorization header to request them.
+
+In the case of failure, error will contain the error encountered during the training.
+
+Terminated trainings (with a status of succeeded, failed, or canceled) will include a metrics object with a predict_time property showing the amount of CPU or GPU time, in seconds, that the training used while running. It won't include time waiting for the training to start.
+
+URL Parameters
+training_id
+string
+Required
+The ID of the training to get.
+Cancel a training
+Endpoint
+
+Copy
+POST https://api.replicate.com/v1/trainings/{training_id}/cancel
+URL Parameters
+training_id
+string
+Required
+The ID of the training you want to cancel.
+Get the signing secret for the default webhook
+Endpoint
+
+Copy
+GET https://api.replicate.com/v1/webhooks/default/secret
+Description
+Get the signing secret for the default webhook endpoint. This is used to verify that webhook requests are coming from Replicate.
+
+Example cURL request:
+
+
+Copy
+curl -s \
+  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
+  https://api.replicate.com/v1/webhooks/default/secret
+The response will be a JSON object with a key property:
+
+
+Copy
+{
+  "key": "..."
+}
+Rate limits
+We limit the number of API requests that can be made to Replicate:
+
+You can call create prediction at 600 requests per minute.
+All other endpoints you can call at 3000 requests per minute.
+If you hit a limit, you will receive a response with status 429 with a body like:
+
+
+Copy
+{"detail":"Request was throttled. Expected available in 1 second."}
+
+
+
+
+# Replicate Node.js client
+
+A Node.js client for [Replicate](https://replicate.com).
+It lets you run models from your Node.js code,
+and everything else you can do with
+[Replicate's HTTP API](https://replicate.com/docs/reference/http).
+
+> [!IMPORTANT]
+> This library can't interact with Replicate's API directly from a browser.
+> For more information about how to build a web application
+> check out our ["Build a website with Next.js"](https://replicate.com/docs/get-started/nextjs) guide.
+
+## Supported platforms
+
+- [Node.js](https://nodejs.org) >= 18
+- [Bun](https://bun.sh) >= 1.0
+- [Deno](https://deno.com) >= 1.28
+
+You can also use this client library on most serverless platforms, including
+[Cloudflare Workers](https://developers.cloudflare.com/workers/),
+[Vercel functions](https://vercel.com/docs/functions), and
+[AWS Lambda](https://aws.amazon.com/lambda/).
+
+## Installation
+
+Install it from npm:
+
+```bash
+npm install replicate
+```
+
+## Usage
+
+Import or require the package:
+
+```js
+// CommonJS (default or using .cjs extension)
+const Replicate = require("replicate");
+
+// ESM (where `"module": true` in package.json or using .mjs extension)
+import Replicate from "replicate";
+```
+
+Instantiate the client:
+
+```js
+const replicate = new Replicate({
+  // get your token from https://replicate.com/account/api-tokens
+  auth: "my api token", // defaults to process.env.REPLICATE_API_TOKEN
+});
+```
+
+Run a model and await the result:
+
+```js
+const model = "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478";
+const input = {
+  prompt: "a 19th century portrait of a raccoon gentleman wearing a suit",
+};
+const output = await replicate.run(model, { input });
+// ['https://replicate.delivery/pbxt/GtQb3Sgve42ZZyVnt8xjquFk9EX5LP0fF68NTIWlgBMUpguQA/out-0.png']
+```
+
+You can also run a model in the background:
+
+```js
+let prediction = await replicate.predictions.create({
+  version: "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+  input: {
+    prompt: "painting of a cat by andy warhol",
+  },
+});
+```
+
+Then fetch the prediction result later:
+
+```js
+prediction = await replicate.predictions.get(prediction.id);
+```
+
+Or wait for the prediction to finish:
+
+```js
+prediction = await replicate.wait(prediction);
+console.log(prediction.output);
+// ['https://replicate.delivery/pbxt/RoaxeXqhL0xaYyLm6w3bpGwF5RaNBjADukfFnMbhOyeoWBdhA/out-0.png']
+```
+
+To run a model that takes a file input you can pass either
+a URL to a publicly accessible file on the Internet
+or a handle to a file on your local device.
+
+```js
+const fs = require("node:fs/promises");
+
+// Or when using ESM.
+// import fs from "node:fs/promises";
+
+const model = "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b";
+const input = {
+  image: await fs.readFile("path/to/image.png"),
+};
+const output = await replicate.run(model, { input });
+// ['https://replicate.delivery/mgxm/e7b0e122-9daa-410e-8cde-006c7308ff4d/output.png']
+```
+
+> [!NOTE]
+> File handle inputs are automatically uploaded to Replicate.
+> See [`replicate.files.create`](#replicatefilescreate) for more information.
+> The maximum size for uploaded files is 100MiB.
+> To run a model with a larger file as an input,
+> upload the file to your own storage provider
+> and pass a publicly accessible URL.
+
+## TypeScript usage
+
+This library exports TypeScript definitions. You can import them like this:
+
+```ts
+import Replicate, { type Prediction } from 'replicate';
+```
+
+Here's an example that uses the `Prediction` type with a custom `onProgress` callback:
+
+```ts
+import Replicate, { type Prediction } from 'replicate';
+
+const replicate = new Replicate();
+const model = "black-forest-labs/flux-schnell";
+const prompt = "a 19th century portrait of a raccoon gentleman wearing a suit";
+function onProgress(prediction: Prediction) {
+  console.log({ prediction });
+}
+
+const output = await replicate.run(model, { input: { prompt } }, onProgress)
+console.log({ output })
+```
+
+See the full list of exported types in [index.d.ts](./index.d.ts).
+
+### Webhooks
+
+Webhooks provide real-time updates about your prediction. Specify an endpoint when you create a prediction, and Replicate will send HTTP POST requests to that URL when the prediction is created, updated, and finished.
+
+It is possible to provide a URL to the predictions.create() function that will be requested by Replicate when the prediction status changes. This is an alternative to polling.
+
+To receive webhooks you’ll need a web server. The following example uses Hono, a web standards based server, but this pattern applies to most frameworks.
+
+<details>
+  <summary>See example</summary>
+
+```js
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+
+const app = new Hono();
+app.get('/webhooks/replicate', async (c) => {
+  // Get the prediction from the request.
+  const prediction = await c.req.json();
+  console.log(prediction);
+  //=> {"id": "xyz", "status": "successful", ... }
+
+  // Acknowledge the webhook.
+  c.status(200);
+  c.json({ok: true});
+}));
+
+serve(app, (info) => {
+  console.log(`Listening on http://localhost:${info.port}`)
+  //=> Listening on http://localhost:3000
+});
+```
+
+</details>
+
+Create the prediction passing in the webhook URL to `webhook` and specify which events you want to receive in `webhook_events_filter` out of "start", "output", ”logs” and "completed":
+
+```js
+const Replicate = require("replicate");
+const replicate = new Replicate();
+
+const input = {
+    image: "https://replicate.delivery/pbxt/KWDkejqLfER3jrroDTUsSvBWFaHtapPxfg4xxZIqYmfh3zXm/Screenshot%202024-02-28%20at%2022.14.00.png",
+    denoising_strength: 0.5,
+    instant_id_strength: 0.8
+};
+
+const callbackURL = `https://my.app/webhooks/replicate`;
+await replicate.predictions.create({
+  version: "19deaef633fd44776c82edf39fd60e95a7250b8ececf11a725229dc75a81f9ca",
+  input: input,
+  webhook: callbackURL,
+  webhook_events_filter: ["completed"],
+});
+
+// The server will now handle the event and log:
+// => {"id": "xyz", "status": "successful", ... }
+```
+
+## Verifying webhooks
+
+To prevent unauthorized requests, Replicate signs every webhook and its metadata with a unique key for each user or organization. You can use this signature to verify the webhook indeed comes from Replicate before you process it.
+
+This client includes a `validateWebhook` convenience function that you can use to validate webhooks.
+
+To validate webhooks:
+
+1. Check out the [webhooks guide](https://replicate.com/docs/webhooks) to get started.
+1. [Retrieve your webhook signing secret](https://replicate.com/docs/webhooks#retrieving-the-webhook-signing-key) and store it in your enviroment.
+1. Update your webhook handler to call `validateWebhook(request, secret)`, where `request` is an instance of a [web-standard `Request` object](https://developer.mozilla.org/en-US/docs/Web/API/object, and `secret` is the signing secret for your environment.
+
+Here's an example of how to validate webhooks using Next.js:
+
+```js
+import { NextResponse } from 'next/server';
+import { validateWebhook } from 'replicate';
+
+export async function POST(request) {
+  const secret = process.env.REPLICATE_WEBHOOK_SIGNING_SECRET;
+
+  if (!secret) {
+    console.log("Skipping webhook validation. To validate webhooks, set REPLICATE_WEBHOOK_SIGNING_SECRET")
+    const body = await request.json();
+    console.log(body);
+    return NextResponse.json({ detail: "Webhook received (but not validated)" }, { status: 200 });
+  }
+
+  const webhookIsValid = await validateWebhook(request.clone(), secret);
+
+  if (!webhookIsValid) {
+    return NextResponse.json({ detail: "Webhook is invalid" }, { status: 401 });
+  }
+
+  // process validated webhook here...
+  console.log("Webhook is valid!");
+  const body = await request.json();
+  console.log(body);
+
+  return NextResponse.json({ detail: "Webhook is valid" }, { status: 200 });
+}
+```
+
+If your environment doesn't support `Request` objects, you can pass the required information to `validateWebhook` directly:
+
+```js
+const requestData = {
+  id: "123",            // the `Webhook-Id` header
+  timestamp: "0123456", // the `Webhook-Timestamp` header
+  signature: "xyz",     // the `Webhook-Signature` header
+  body: "{...}",        // the request body as a string, ArrayBuffer or ReadableStream
+  secret: "shhh",       // the webhook secret, obtained from the `replicate.webhooks.defaul.secret` endpoint
+};
+const webhookIsValid = await validateWebhook(requestData);
+```
+
+## TypeScript
+
+The `Replicate` constructor and all `replicate.*` methods are fully typed.
+
+Currently in order to support the module format used by `replicate` you'll need to set `esModuleInterop` to `true` in your tsconfig.json.
+
+## API
+
+### Constructor
+
+```js
+const replicate = new Replicate(options);
+```
+
+| name                           | type     | description                                                                                                                      |
+| ------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `options.auth`                 | string   | **Required**. API access token                                                                                                   |
+| `options.userAgent`            | string   | Identifier of your app. Defaults to `replicate-javascript/${packageJSON.version}`                                                |
+| `options.baseUrl`              | string   | Defaults to https://api.replicate.com/v1                                                                                         |
+| `options.fetch`                | function | Fetch function to use. Defaults to `globalThis.fetch`                                                                            |
+| `options.fileEncodingStrategy` | string   | Determines the file encoding strategy to use. Possible values: `"default"`, `"upload"`, or `"data-uri"`. Defaults to `"default"` |
+
+
+The client makes requests to Replicate's API using
+[fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch).
+By default, the `globalThis.fetch` function is used,
+which is available on [Node.js 18](https://nodejs.org/en/blog/announcements/v18-release-announce#fetch-experimental) and later,
+as well as
+[Cloudflare Workers](https://developers.cloudflare.com/workers/runtime-apis/fetch/),
+[Vercel Functions](https://vercel.com/docs/functions),
+and other environments.
+
+On earlier versions of Node.js
+and other environments where global fetch isn't available,
+you can install a fetch function from an external package like
+[cross-fetch](https://www.npmjs.com/package/cross-fetch)
+and pass it to the `fetch` option in the constructor.
+
+```js
+const Replicate = require("replicate");
+const fetch = require("fetch");
+
+// Using ESM:
+// import Replicate from "replicate";
+// import fetch from "cross-fetch";
+
+const replicate = new Replicate({ fetch });
+```
+
+You can also use the `fetch` option to add custom behavior to client requests,
+such as injecting headers or adding log statements.
+
+```js
+const customFetch = (url, options) => {
+  const headers = options && options.headers ? { ...options.headers } : {};
+  headers["X-Custom-Header"] = "some value";
+
+  console.log("fetch", { url, ...options, headers });
+
+  return fetch(url, { ...options, headers });
+};
+
+const replicate = new Replicate({ fetch: customFetch });
+```
+
+### `replicate.run`
+
+Run a model and await the result. Unlike [`replicate.prediction.create`](#replicatepredictionscreate), this method returns only the prediction output rather than the entire prediction object.
+
+```js
+const output = await replicate.run(identifier, options, progress);
+```
+
+| name                            | type     | description                                                                                                                                                                                                 |
+| ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identifier`                    | string   | **Required**. The model version identifier in the format `{owner}/{name}:{version}`, for example `stability-ai/sdxl:8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f`                       |
+| `options.input`                 | object   | **Required**. An object with the model inputs.                                                                                                                                                              |
+| `options.wait`                  | object   | Options for waiting for the prediction to finish                                                                                                                                                            |
+| `options.wait.interval`         | number   | Polling interval in milliseconds. Defaults to 500                                                                                                                                                           |
+| `options.webhook`               | string   | An HTTPS URL for receiving a webhook when the prediction has new output                                                                                                                                     |
+| `options.webhook_events_filter` | string[] | An array of events which should trigger [webhooks](https://replicate.com/docs/webhooks). Allowable values are `start`, `output`, `logs`, and `completed`                                                    |
+| `options.signal`                | object   | An [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) to cancel the prediction                                                                                                     |
+| `progress`                      | function | Callback function that receives the prediction object as it's updated. The function is called when the prediction is created, each time it's updated while polling for completion, and when it's completed. |
+
+Throws `Error` if the prediction failed.
+
+Returns `Promise<object>` which resolves with the output of running the model.
+
+Example:
+
+```js
+const model = "stability-ai/sdxl:8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f";
+const input = { prompt: "a 19th century portrait of a raccoon gentleman wearing a suit" };
+const output = await replicate.run(model, { input });
+```
+
+Example that logs progress as the model is running:
+
+```js
+const model = "stability-ai/sdxl:8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f";
+const input = { prompt: "a 19th century portrait of a raccoon gentleman wearing a suit" };
+const onProgress = (prediction) => {
+   const last_log_line = prediction.logs.split("\n").pop()
+   console.log({id: prediction.id, log: last_log_line})
+}
+const output = await replicate.run(model, { input }, onProgress)
+```
+
+### `replicate.stream`
+
+Run a model and stream its output. Unlike [`replicate.prediction.create`](#replicatepredictionscreate), this method returns only the prediction output rather than the entire prediction object.
+
+```js
+for await (const event of replicate.stream(identifier, options)) { /* ... */ }
+```
+
+| name                            | type     | description                                                                                                                                              |
+| ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identifier`                    | string   | **Required**. The model version identifier in the format `{owner}/{name}` or `{owner}/{name}:{version}`, for example `meta/llama-2-70b-chat`             |
+| `options.input`                 | object   | **Required**. An object with the model inputs.                                                                                                           |
+| `options.webhook`               | string   | An HTTPS URL for receiving a webhook when the prediction has new output                                                                                  |
+| `options.webhook_events_filter` | string[] | An array of events which should trigger [webhooks](https://replicate.com/docs/webhooks). Allowable values are `start`, `output`, `logs`, and `completed` |
+| `options.signal`                | object   | An [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) to cancel the prediction                                                  |
+
+Throws `Error` if the prediction failed.
+
+Returns `AsyncGenerator<ServerSentEvent>` which yields the events of running the model.
+
+Example:
+
+```js
+const model = "meta/llama-2-70b-chat";
+const options = {
+  input: {
+    prompt: "Write a poem about machine learning in the style of Mary Oliver.",
+  },
+  // webhook: "https://smee.io/dMUlmOMkzeyRGjW" // optional
+};
+const output = [];
+
+for await (const { event, data } of replicate.stream(model, options)) {
+  if (event === "output") {
+    output.push(data);
+  }
+}
+
+console.log(output.join("").trim());
+```
+
+### Server-sent events
+
+A stream generates server-sent events with the following properties:
+
+| name    | type   | description                                                                  |
+| ------- | ------ | ---------------------------------------------------------------------------- |
+| `event` | string | The type of event. Possible values are `output`, `logs`, `error`, and `done` |
+| `data`  | string | The event data                                                               |
+| `id`    | string | The event id                                                                 |
+| `retry` | number | The number of milliseconds to wait before reconnecting to the server         |
+
+As the prediction runs, the generator yields `output` and `logs` events. If an error occurs, the generator yields an `error` event with a JSON object containing the error message set to the `data` property. When the prediction is done, the generator yields a `done` event with an empty JSON object set to the `data` property.
+
+Events with the `output` event type have their `toString()` method overridden to return the event data as a string. Other event types return an empty string.
+
+### `replicate.models.get`
+
+Get metadata for a public model or a private model that you own.
+
+```js
+const response = await replicate.models.get(model_owner, model_name);
+```
+
+| name          | type   | description                                                             |
+| ------------- | ------ | ----------------------------------------------------------------------- |
+| `model_owner` | string | **Required**. The name of the user or organization that owns the model. |
+| `model_name`  | string | **Required**. The name of the model.                                    |
+
+```jsonc
+{
+  "url": "https://replicate.com/replicate/hello-world",
+  "owner": "replicate",
+  "name": "hello-world",
+  "description": "A tiny model that says hello",
+  "visibility": "public",
+  "github_url": "https://github.com/replicate/cog-examples",
+  "paper_url": null,
+  "license_url": null,
+  "latest_version": {
+    /* ... */
+  }
+}
+```
+
+### `replicate.models.list`
+
+Get a paginated list of all public models.
+
+```js
+const response = await replicate.models.list();
+```
+
+```jsonc
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "url": "https://replicate.com/replicate/hello-world",
+      "owner": "replicate",
+      "name": "hello-world",
+      "description": "A tiny model that says hello",
+      "visibility": "public",
+      "github_url": "https://github.com/replicate/cog-examples",
+      "paper_url": null,
+      "license_url": null,
+      "run_count": 5681081,
+      "cover_image_url": "...",
+      "default_example": {
+        /* ... */
+      },
+      "latest_version": {
+        /* ... */
+      }
+    }
+  ]
+}
+```
+
+### `replicate.models.search`
+
+Search for public models on Replicate.
+
+```js
+const response = await replicate.models.search(query);
+```
+
+| name    | type   | description                            |
+| ------- | ------ | -------------------------------------- |
+| `query` | string | **Required**. The search query string. |
+
+### `replicate.models.create`
+
+Create a new public or private model.
+
+```js
+const response = await replicate.models.create(model_owner, model_name, options);
+```
+
+| name                      | type   | description                                                                                                                                                                                                                                               |
+| ------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model_owner`             | string | **Required**. The name of the user or organization that will own the model. This must be the same as the user or organization that is making the API request. In other words, the API token used in the request must belong to this user or organization. |
+| `model_name`              | string | **Required**. The name of the model. This must be unique among all models owned by the user or organization.                                                                                                                                              |
+| `options.visibility`      | string | **Required**. Whether the model should be public or private. A public model can be viewed and run by anyone, whereas a private model can be viewed and run only by the user or organization members that own the model.                                   |
+| `options.hardware`        | string | **Required**. The SKU for the hardware used to run the model. Possible values can be found by calling [`replicate.hardware.list()`](#replicatehardwarelist).                                                                                              |
+| `options.description`     | string | A description of the model.                                                                                                                                                                                                                               |
+| `options.github_url`      | string | A URL for the model's source code on GitHub.                                                                                                                                                                                                              |
+| `options.paper_url`       | string | A URL for the model's paper.                                                                                                                                                                                                                              |
+| `options.license_url`     | string | A URL for the model's license.                                                                                                                                                                                                                            |
+| `options.cover_image_url` | string | A URL for the model's cover image. This should be an image file.                                                                                                                                                                                          |
+
+### `replicate.hardware.list`
+
+List available hardware for running models on Replicate.
+
+```js
+const response = await replicate.hardware.list()
+```
+
+```jsonc
+[
+  {"name": "CPU", "sku": "cpu" },
+  {"name": "Nvidia T4 GPU", "sku": "gpu-t4" },
+  {"name": "Nvidia A40 GPU", "sku": "gpu-a40-small" },
+  {"name": "Nvidia A40 (Large) GPU", "sku": "gpu-a40-large" },
+]
+```
+
+### `replicate.models.versions.list`
+
+Get a list of all published versions of a model, including input and output schemas for each version.
+
+```js
+const response = await replicate.models.versions.list(model_owner, model_name);
+```
+
+| name          | type   | description                                                             |
+| ------------- | ------ | ----------------------------------------------------------------------- |
+| `model_owner` | string | **Required**. The name of the user or organization that owns the model. |
+| `model_name`  | string | **Required**. The name of the model.                                    |
+
+```jsonc
+{
+  "previous": null,
+  "next": null,
+  "results": [
+    {
+      "id": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+      "created_at": "2022-04-26T19:29:04.418669Z",
+      "cog_version": "0.3.0",
+      "openapi_schema": {
+        /* ... */
+      }
+    },
+    {
+      "id": "e2e8c39e0f77177381177ba8c4025421ec2d7e7d3c389a9b3d364f8de560024f",
+      "created_at": "2022-03-21T13:01:04.418669Z",
+      "cog_version": "0.3.0",
+      "openapi_schema": {
+        /* ... */
+      }
+    }
+  ]
+}
+```
+
+### `replicate.models.versions.get`
+
+Get metatadata for a specific version of a model.
+
+```js
+const response = await replicate.models.versions.get(model_owner, model_name, version_id);
+```
+
+| name          | type   | description                                                             |
+| ------------- | ------ | ----------------------------------------------------------------------- |
+| `model_owner` | string | **Required**. The name of the user or organization that owns the model. |
+| `model_name`  | string | **Required**. The name of the model.                                    |
+| `version_id`  | string | **Required**. The model version                                         |
+
+```jsonc
+{
+  "id": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "created_at": "2022-04-26T19:29:04.418669Z",
+  "cog_version": "0.3.0",
+  "openapi_schema": {
+    /* ... */
+  }
+}
+```
+
+### `replicate.collections.get`
+
+Get a list of curated model collections. See [replicate.com/collections](https://replicate.com/collections).
+
+```js
+const response = await replicate.collections.get(collection_slug);
+```
+
+| name              | type   | description                                                                    |
+| ----------------- | ------ | ------------------------------------------------------------------------------ |
+| `collection_slug` | string | **Required**. The slug of the collection. See http://replicate.com/collections |
+
+### `replicate.predictions.create`
+
+Run a model with inputs you provide.
+
+```js
+const response = await replicate.predictions.create(options);
+```
+
+| name                            | type     | description                                                                                                                      |
+| ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `options.input`                 | object   | **Required**. An object with the model's inputs                                                                                  |
+| `options.model`                 | string   | The name of the model, e.g. `black-forest-labs/flux-schnell`. This is required if you're running an [official model](https://replicate.com/explore#official-models).                                                                                                   |
+| `options.version`               | string   | The 64-character [model version id](https://replicate.com/docs/topics/models/versions), e.g. `80537f9eead1a5bfa72d5ac6ea6414379be41d4d4f6679fd776e9535d1eb58bb`. This is required if you're not specifying a `model`.                                                                                                  |
+| `options.wait`                  | number   | Wait up to 60s for the prediction to finish before returning. Disabled by default. See [Synchronous predictions](https://replicate.com/docs/topics/predictions/create-a-prediction#sync-mode) for more information.                                                           |
+| `options.stream`                | boolean  | Requests a URL for streaming output output                                                                                       |
+| `options.webhook`               | string   | An HTTPS URL for receiving a webhook when the prediction has new output                                                          |
+| `options.webhook_events_filter` | string[] | You can change which events trigger webhook requests by specifying webhook events (`start` \| `output` \| `logs` \| `completed`) |
+
+```jsonc
+{
+  "id": "ufawqhfynnddngldkgtslldrkq",
+  "version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "status": "succeeded",
+  "input": {
+    "text": "Alice"
+  },
+  "output": null,
+  "error": null,
+  "logs": null,
+  "metrics": {},
+  "created_at": "2022-04-26T22:13:06.224088Z",
+  "started_at": null,
+  "completed_at": null,
+  "urls": {
+    "get": "https://api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq",
+    "cancel": "https://api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq/cancel",
+    "stream": "https://streaming.api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq" // Present only if `options.stream` is `true`
+  }
+}
+```
+
+#### Streaming
+
+Specify the `stream` option when creating a prediction
+to request a URL to receive streaming output using
+[server-sent events (SSE)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
+
+If the requested model version supports streaming,
+then the returned prediction will have a `stream` entry in its `urls` property
+with a URL that you can use to construct an
+[`EventSource`](https://developer.mozilla.org/en-US/docs/Web/API/EventSource).
+
+```js
+if (prediction && prediction.urls && prediction.urls.stream) {
+  const source = new EventSource(prediction.urls.stream, { withCredentials: true });
+
+  source.addEventListener("output", (e) => {
+    console.log("output", e.data);
+  });
+
+  source.addEventListener("error", (e) => {
+    console.error("error", JSON.parse(e.data));
+  });
+
+  source.addEventListener("done", (e) => {
+    source.close();
+    console.log("done", JSON.parse(e.data));
+  });
+}
+```
+
+A prediction's event stream consists of the following event types:
+
+| event    | format     | description                                    |
+| -------- | ---------- | ---------------------------------------------- |
+| `output` | plain text | Emitted when the prediction returns new output |
+| `error`  | JSON       | Emitted when the prediction returns an error   |
+| `done`   | JSON       | Emitted when the prediction finishes           |
+
+A `done` event is emitted when a prediction finishes successfully,
+is cancelled, or produces an error.
+
+### `replicate.predictions.get`
+
+```js
+const response = await replicate.predictions.get(prediction_id);
+```
+
+| name            | type   | description                     |
+| --------------- | ------ | ------------------------------- |
+| `prediction_id` | number | **Required**. The prediction id |
+
+```jsonc
+{
+  "id": "ufawqhfynnddngldkgtslldrkq",
+  "version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "urls": {
+    "get": "https://api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq",
+    "cancel": "https://api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq/cancel"
+  },
+  "status": "starting",
+  "input": {
+    "text": "Alice"
+  },
+  "output": null,
+  "error": null,
+  "logs": null,
+  "metrics": {},
+  "created_at": "2022-04-26T22:13:06.224088Z",
+  "started_at": null,
+  "completed_at": null
+}
+```
+
+### `replicate.predictions.cancel`
+
+Stop a running prediction before it finishes.
+
+```js
+const response = await replicate.predictions.cancel(prediction_id);
+```
+
+| name            | type   | description                     |
+| --------------- | ------ | ------------------------------- |
+| `prediction_id` | number | **Required**. The prediction id |
+
+```jsonc
+{
+  "id": "ufawqhfynnddngldkgtslldrkq",
+  "version": "5c7d5dc6dd8bf75c1acaa8565735e7986bc5b66206b55cca93cb72c9bf15ccaa",
+  "urls": {
+    "get": "https://api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq",
+    "cancel": "https://api.replicate.com/v1/predictions/ufawqhfynnddngldkgtslldrkq/cancel"
+  },
+  "status": "canceled",
+  "input": {
+    "text": "Alice"
+  },
+  "output": null,
+  "error": null,
+  "logs": null,
+  "metrics": {},
+  "created_at": "2022-04-26T22:13:06.224088Z",
+  "started_at": "2022-04-26T22:13:06.224088Z",
+  "completed_at": "2022-04-26T22:13:06.224088Z"
+}
+```
+
+### `replicate.predictions.list`
+
+Get a paginated list of all the predictions you've created.
+
+```js
+const response = await replicate.predictions.list();
+```
+
+`replicate.predictions.list()` takes no arguments.
+
+```jsonc
+{
+  "previous": null,
+  "next": "https://api.replicate.com/v1/predictions?cursor=cD0yMDIyLTAxLTIxKzIzJTNBMTglM0EyNC41MzAzNTclMkIwMCUzQTAw",
+  "results": [
+    {
+      "id": "jpzd7hm5gfcapbfyt4mqytarku",
+      "version": "b21cbe271e65c1718f2999b038c18b45e21e4fba961181fbfae9342fc53b9e05",
+      "urls": {
+        "get": "https://api.replicate.com/v1/predictions/jpzd7hm5gfcapbfyt4mqytarku",
+        "cancel": "https://api.replicate.com/v1/predictions/jpzd7hm5gfcapbfyt4mqytarku/cancel"
+      },
+      "source": "web",
+      "status": "succeeded",
+      "created_at": "2022-04-26T20:00:40.658234Z",
+      "started_at": "2022-04-26T20:00:84.583803Z",
+      "completed_at": "2022-04-26T20:02:27.648305Z"
+    }
+    /* ... */
+  ]
+}
+```
+
+### `replicate.trainings.create`
+
+Use the [training API](https://replicate.com/docs/fine-tuning) to fine-tune language models
+to make them better at a particular task.
+To see what **language models** currently support fine-tuning,
+check out Replicate's [collection of trainable language models](https://replicate.com/collections/trainable-language-models).
+
+If you're looking to fine-tune **image models**,
+check out Replicate's [guide to fine-tuning image models](https://replicate.com/docs/guides/fine-tune-an-image-model).
+
+```js
+const response = await replicate.trainings.create(model_owner, model_name, version_id, options);
+```
+
+| name                            | type     | description                                                                                                                      |
+| ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `model_owner`                   | string   | **Required**. The name of the user or organization that owns the model.                                                          |
+| `model_name`                    | string   | **Required**. The name of the model.                                                                                             |
+| `version`                       | string   | **Required**. The model version                                                                                                  |
+| `options.destination`           | string   | **Required**. The destination for the trained version in the form `{username}/{model_name}`                                      |
+| `options.input`                 | object   | **Required**. An object with the model's inputs                                                                                  |
+| `options.webhook`               | string   | An HTTPS URL for receiving a webhook when the training has new output                                                            |
+| `options.webhook_events_filter` | string[] | You can change which events trigger webhook requests by specifying webhook events (`start` \| `output` \| `logs` \| `completed`) |
+
+```jsonc
+{
+  "id": "zz4ibbonubfz7carwiefibzgga",
+  "version": "3ae0799123a1fe11f8c89fd99632f843fc5f7a761630160521c4253149754523",
+  "status": "starting",
+  "input": {
+    "text": "..."
+  },
+  "output": null,
+  "error": null,
+  "logs": null,
+  "started_at": null,
+  "created_at": "2023-03-28T21:47:58.566434Z",
+  "completed_at": null
+}
+```
+
+> **Warning**
+> If you try to fine-tune a model that doesn't support training,
+> you'll get a `400 Bad Request` response from the server.
+
+### `replicate.trainings.get`
+
+Get metadata and status of a training.
+
+```js
+const response = await replicate.trainings.get(training_id);
+```
+
+| name          | type   | description                   |
+| ------------- | ------ | ----------------------------- |
+| `training_id` | number | **Required**. The training id |
+
+```jsonc
+{
+  "id": "zz4ibbonubfz7carwiefibzgga",
+  "version": "3ae0799123a1fe11f8c89fd99632f843fc5f7a761630160521c4253149754523",
+  "status": "succeeded",
+  "input": {
+    "data": "..."
+    "param1": "..."
+  },
+  "output": {
+    "version": "..."
+  },
+  "error": null,
+  "logs": null,
+  "webhook_completed": null,
+  "started_at": "2023-03-28T21:48:02.402755Z",
+  "created_at": "2023-03-28T21:47:58.566434Z",
+  "completed_at": "2023-03-28T02:49:48.492023Z"
+}
+```
+
+### `replicate.trainings.cancel`
+
+Stop a running training job before it finishes.
+
+```js
+const response = await replicate.trainings.cancel(training_id);
+```
+
+| name          | type   | description                   |
+| ------------- | ------ | ----------------------------- |
+| `training_id` | number | **Required**. The training id |
+
+```jsonc
+{
+  "id": "zz4ibbonubfz7carwiefibzgga",
+  "version": "3ae0799123a1fe11f8c89fd99632f843fc5f7a761630160521c4253149754523",
+  "status": "canceled",
+  "input": {
+    "data": "..."
+    "param1": "..."
+  },
+  "output": {
+    "version": "..."
+  },
+  "error": null,
+  "logs": null,
+  "webhook_completed": null,
+  "started_at": "2023-03-28T21:48:02.402755Z",
+  "created_at": "2023-03-28T21:47:58.566434Z",
+  "completed_at": "2023-03-28T02:49:48.492023Z"
+}
+```
+
+### `replicate.trainings.list`
+
+Get a paginated list of all the trainings you've run.
+
+```js
+const response = await replicate.trainings.list();
+```
+
+`replicate.trainings.list()` takes no arguments.
+
+```jsonc
+{
+  "previous": null,
+  "next": "https://api.replicate.com/v1/trainings?cursor=cD0yMDIyLTAxLTIxKzIzJTNBMTglM0EyNC41MzAzNTclMkIwMCUzQTAw",
+  "results": [
+    {
+      "id": "jpzd7hm5gfcapbfyt4mqytarku",
+      "version": "b21cbe271e65c1718f2999b038c18b45e21e4fba961181fbfae9342fc53b9e05",
+      "urls": {
+        "get": "https://api.replicate.com/v1/trainings/jpzd7hm5gfcapbfyt4mqytarku",
+        "cancel": "https://api.replicate.com/v1/trainings/jpzd7hm5gfcapbfyt4mqytarku/cancel"
+      },
+      "source": "web",
+      "status": "succeeded",
+      "created_at": "2022-04-26T20:00:40.658234Z",
+      "started_at": "2022-04-26T20:00:84.583803Z",
+      "completed_at": "2022-04-26T20:02:27.648305Z"
+    }
+    /* ... */
+  ]
+}
+```
+
+### `replicate.deployments.predictions.create`
+
+Run a model using your own custom deployment.
+
+Deployments allow you to run a model with a private, fixed API endpoint. You can configure the version of the model, the hardware it runs on, and how it scales. See the [deployments guide](https://replicate.com/docs/deployments) to learn more and get started.
+
+```js
+const response = await replicate.deployments.predictions.create(deployment_owner, deployment_name, options);
+```
+
+| name                            | type     | description                                                                                                                      |
+| ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `deployment_owner`              | string   | **Required**. The name of the user or organization that owns the deployment                                                      |
+| `deployment_name`               | string   | **Required**. The name of the deployment                                                                                         |
+| `options.input`                 | object   | **Required**. An object with the model's inputs                                                                                  |
+| `options.webhook`               | string   | An HTTPS URL for receiving a webhook when the prediction has new output                                                          |
+| `options.webhook_events_filter` | string[] | You can change which events trigger webhook requests by specifying webhook events (`start` \| `output` \| `logs` \| `completed`) |
+
+Use `replicate.wait` to wait for a prediction to finish,
+or `replicate.predictions.cancel` to cancel a prediction before it finishes.
+
+### `replicate.deployments.list`
+
+List your deployments.
+
+```js
+const response = await replicate.deployments.list();
+```
+
+```jsonc
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "owner": "acme",
+      "name": "my-app-image-generator",
+      "current_release": { /* ... */ }
+    }
+    /* ... */
+  ]
+}
+```
+
+### `replicate.deployments.create`
+
+Create a new deployment.
+
+```js
+const response = await replicate.deployments.create(options);
+```
+
+| name                    | type   | description                                                                      |
+| ----------------------- | ------ | -------------------------------------------------------------------------------- |
+| `options.name`          | string | Required. Name of the new deployment                                             |
+| `options.model`         | string | Required. Name of the model in the format `{username}/{model_name}`              |
+| `options.version`       | string | Required. ID of the model version                                                |
+| `options.hardware`      | string | Required. SKU of the hardware to run the deployment on (`cpu`, `gpu-a100`, etc.) |
+| `options.min_instances` | number | Minimum number of instances to run. Defaults to 0                                |
+| `options.max_instances` | number | Maximum number of instances to scale up to based on traffic. Defaults to 1       |
+
+```jsonc
+{
+  "owner": "acme",
+  "name": "my-app-image-generator",
+  "current_release": {
+    "number": 1,
+    "model": "stability-ai/sdxl",
+    "version": "da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf",
+    "created_at": "2024-03-14T11:43:32.049157Z",
+    "created_by": {
+       "type": "organization",
+       "username": "acme",
+       "name": "Acme, Inc.",
+       "github_url": "https://github.com/replicate"
+    },
+    "configuration": {
+      "hardware": "gpu-a100",
+      "min_instances": 1,
+      "max_instances": 0
+    }
+  }
+}
+```
+
+### `replicate.deployments.update`
+
+Update an existing deployment.
+
+```js
+const response = await replicate.deployments.update(deploymentOwner, deploymentName, options);
+```
+
+| name                    | type   | description                                                                      |
+| ----------------------- | ------ | -------------------------------------------------------------------------------- |
+| `deploymentOwner`       | string | Required. Owner of the deployment                                                |
+| `deploymentName`        | string | Required. Name of the deployment to update                                       |
+| `options.model`         | string | Name of the model in the format `{username}/{model_name}`                        |
+| `options.version`       | string | ID of the model version                                                          |
+| `options.hardware`      | string | Required. SKU of the hardware to run the deployment on (`cpu`, `gpu-a100`, etc.) |
+| `options.min_instances` | number | Minimum number of instances to run                                               |
+| `options.max_instances` | number | Maximum number of instances to scale up to                                       |
+
+```jsonc
+{
+  "owner": "acme",
+  "name": "my-app-image-generator",
+  "current_release": {
+    "number": 2,
+    "model": "stability-ai/sdxl",
+    "version": "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+    "created_at": "2024-03-14T11:43:32.049157Z",
+    "created_by": {
+       "type": "organization",
+       "username": "acme",
+       "name": "Acme, Inc.",
+       "github_url": "https://github.com/replicate"
+    },
+    "configuration": {
+      "hardware": "gpu-a100",
+      "min_instances": 1,
+      "max_instances": 0
+    }
+  }
+}
+```
+
+### `replicate.files.create`
+
+Upload a file to Replicate.
+
+> [!TIP]
+> The client library calls this endpoint automatically to upload the contents of
+> file handles provided as prediction and training inputs.
+> You don't need to call this method directly unless you want more control.
+> For example, you might want to reuse a file across multiple predictions
+> without re-uploading it each time,
+> or you may want to set custom metadata on the file resource.
+>
+> You can configure how a client handles file handle inputs
+> by setting the `fileEncodingStrategy` option in the
+> [client constructor](#constructor).
+
+```js
+const response = await replicate.files.create(file, metadata);
+```
+
+| name       | type                  | description                                                |
+| ---------- | --------------------- | ---------------------------------------------------------- |
+| `file`     | Blob, File, or Buffer | **Required**. The file to upload.                          |
+| `metadata` | object                | Optional. User-provided metadata associated with the file. |
+
+```jsonc
+{
+    "id": "MTQzODcyMDct0YjZkLWE1ZGYtMmRjZTViNWIwOGEyNjNhNS0",
+    "name": "photo.webp",
+    "content_type": "image/webp",
+    "size": 96936,
+    "etag": "f211779ff7502705bbf42e9874a17ab3",
+    "checksums": {
+        "sha256": "7282eb6991fa4f38d80c312dc207d938c156d714c94681623aedac846488e7d3",
+        "md5": "f211779ff7502705bbf42e9874a17ab3"
+    },
+    "metadata": {
+        "customer_reference_id": "123"
+    },
+    "created_at": "2024-06-28T10:16:04.062Z",
+    "expires_at": "2024-06-29T10:16:04.062Z",
+    "urls": {
+        "get": "https://api.replicate.com/v1/files/MTQzODcyMDct0YjZkLWE1ZGYtMmRjZTViNWIwOGEyNjNhNS0"
+    }
+}
+```
+
+Files uploaded to Replicate using this endpoint expire after 24 hours.
+
+Pass the `urls.get` property of a file resource
+to use it as an input when running a model on Replicate.
+The value of `urls.get` is opaque,
+and shouldn't be inferred from other attributes.
+
+The contents of a file are only made accessible to a model running on Replicate,
+and only when passed as a prediction or training input
+by the user or organization who created the file.
+
+### `replicate.files.list`
+
+List all files you've uploaded.
+
+```js
+const response = await replicate.files.list();
+```
+
+### `replicate.files.get`
+
+Get metadata for a specific file.
+
+```js
+const response = await replicate.files.get(file_id);
+```
+
+| name      | type   | description                       |
+| --------- | ------ | --------------------------------- |
+| `file_id` | string | **Required**. The ID of the file. |
+
+### `replicate.files.delete`
+
+Delete a file.
+
+Files uploaded using the `replicate.files.create` method expire after 24 hours.
+You can use this method to delete them sooner.
+
+```js
+const response = await replicate.files.delete(file_id);
+```
+
+| name      | type   | description                       |
+| --------- | ------ | --------------------------------- |
+| `file_id` | string | **Required**. The ID of the file. |
+
+### `replicate.paginate`
+
+Pass another method as an argument to iterate over results
+that are spread across multiple pages.
+
+This method is implemented as an
+[async generator function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator),
+which you can use in a for loop or iterate over manually.
+
+```js
+// iterate over paginated results in a for loop
+for await (const page of replicate.paginate(replicate.predictions.list)) {
+  /* do something with page of results */
+}
+
+// iterate over paginated results one at a time
+let paginator = replicate.paginate(replicate.predictions.list);
+const page1 = await paginator.next();
+const page2 = await paginator.next();
+// etc.
+```
+
+### `replicate.request`
+
+Low-level method used by the Replicate client to interact with API endpoints.
+
+```js
+const response = await replicate.request(route, parameters);
+```
+
+| name                 | type   | description                                                  |
+| -------------------- | ------ | ------------------------------------------------------------ |
+| `options.route`      | string | Required. REST API endpoint path.                            |
+| `options.parameters` | object | URL, query, and request body parameters for the given route. |
+
+The `replicate.request()` method is used by the other methods
+to interact with the Replicate API.
+You can call this method directly to make other requests to the API.
+
+## Troubleshooting
+
+### Predictions hanging in Next.js
+
+Next.js App Router adds some extensions to `fetch` to make it cache responses. To disable this behavior, set the `cache` option to `"no-store"` on the Replicate client's fetch object:
+
+```js
+replicate = new Replicate({/*...*/})
+replicate.fetch = (url, options) => {
+  return fetch(url, { ...options, cache: "no-store" });
+};
+```
+
+Alternatively you can use Next.js [`noStore`](https://github.com/replicate/replicate-javascript/issues/136#issuecomment-1847442879) to opt out of caching for your component.
+
+# cog-flux
+
+This is a [Cog](https://cog.run) inference model for FLUX.1 [schnell] and FLUX.1 [dev] by [Black Forest Labs](https://blackforestlabs.ai/). It powers the following Replicate models:
+
+* https://replicate.com/black-forest-labs/flux-schnell
+* https://replicate.com/black-forest-labs/flux-dev
+
+## Features
+
+* Compilation with `torch.compile`
+* Optional fp8 quantization based on [aredden/flux-fp8-api](https://github.com/aredden/flux-fp8-api), using fast CuDNN attention from Pytorch nightlies
+* NSFW checking with [CompVis](https://huggingface.co/CompVis/stable-diffusion-safety-checker) and [Falcons.ai](https://huggingface.co/Falconsai/nsfw_image_detection) safety checkers
+* img2img support
+
+## Getting started
+
+If you just want to use the models, you can run [FLUX.1 [schnell]](https://replicate.com/black-forest-labs/flux-schnell) and [FLUX.1 [dev]](https://replicate.com/black-forest-labs/flux-dev) on Replicate with an API or in the browser.
+
+The code in this repo can be used as a template for customizations on FLUX.1, or to run the models on your own hardware.
+
+First you need to select which model to run:
+
+```shell
+script/select.sh {dev,schnell}
+```
+
+Then you can run a single prediction on the model using:
+
+```shell
+cog predict -i prompt="a cat in a hat"
+```
+
+The [Cog getting started guide](https://cog.run/getting-started/) explains what Cog is and how it works.
+
+To deploy it to Replicate, run:
+
+```shell
+cog login
+cog push r8.im/<your-username>/<your-model-name>
+```
+
+Learn more on [the deploy a custom model guide in the Replicate documentation](https://replicate.com/docs/guides/deploy-a-custom-model).
+
+## Contributing
+
+Pull requests and issues are welcome! If you see a novel technique or feature you think will make FLUX.1 inference better or faster, let us know and we'll do our best to integrate it.
+
+## Rough, partial roadmap
+
+* Serialize quantized model instead of quantizing on the fly
+* Use row-wise quantization
+* Port quantization and compilation code over to https://github.com/replicate/flux-fine-tuner
+
+## License
+
+The code in this repository is licensed under the [Apache-2.0 License](LICENSE).
+
+FLUX.1 [dev] falls under the [`FLUX.1 [dev]` Non-Commercial License](https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md).
+
+FLUX.1 [schnell] falls under the [Apache-2.0 License](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md).
+
+
+
+Fine-tune an image model
+Table of contents
+
+Step 0: Prerequisites
+Step 1: Gather your training images
+Step 2: Choose a unique trigger word
+Step 3: Create and train a model
+Step 4: Stand up and stretch
+Step 5: Generate images on the web
+Step 6: Generate images using the API
+Step 7: Use a language model to write better prompts
+Step 8: Have fun and iterate
+The FLUX.1 family of image generation models produces images surpassing the quality of existing open-source models. The default Flux models can create beautiful images of people, places, and things, but you can also create your own fine-tuned Flux models to generate images in a specific style, or of a specific subject, or your pet, or of your own face.
+
+Fine-tuning Flux on Replicate is easy: you just need a handful of images to get started. No deep technical knowledge is required. You can even create a fine-tune entirely on the web, without writing a single line of code. The community has already published hundreds of public Flux fine-tunes on Replicate, plus thousands of private fine-tunes too.
+
+This guide will walk you through the process of creating your own Flux fine-tune using images of yourself, so you can generate novel and imaginative images of yourself as a superhero, a cartoon character, an adventurer, or just a regular person in a variety of interesting situations.
+
+Variants of 'ZIKI on a skateboard', generated by the ziki-flux fine-tune.
+Variants of 'ZIKI on a skateboard', generated by the ziki-flux fine-tune.
+Step 0: Prerequisites
+Here's what you'll need to get started:
+
+A Replicate account
+A handful of training images
+Two to three US dollars
+Step 1: Gather your training images
+You'll need a few images of yourself to get started. These should be high-quality images of your face, taken from various angles and in different lighting conditions.
+
+You can fine-tune Flux with as few as two training images, but for best results you'll want to use at least 10 images or more. In theory you'll get continually better results as you include more images in the training data, but the training process can take longer the more images you add.
+
+Consider the following when gathering your training images:
+
+WebP, JPG, and PNG formats are all supported.
+Use 1024x1024 or higher resolution if possible.
+Filenames don't matter. Name your files whatever you like.
+Aspect ratio doesn't matter. Images can be square, landscape, portrait, etc.
+10 images is a good minimum.
+Variety is key. For best results, choose training images with different settings, clothing, lighting, and angles.
+Variety is key. For best results, choose training images with different settings, clothing, lighting, and angles.
+Once you've gathered your images, put them in a zip file. Assuming you put them all in a folder called data, run this command to generate a file called data.zip:
+
+
+Copy
+zip -r data.zip data
+Step 2: Choose a unique trigger word
+Whenever you fine-tune an image model, you also choose a unique "trigger word" that you'll use later in your text prompts when generating images:
+
+
+Copy
+photo of YOUR_TRIGGER_WORD_HERE looking super-cool, riding on a segway scooter
+Here are some things to consider when choosing a trigger word:
+
+It should be something unique like MY_UNIQ_TRGGR. Think "vanity license plates", but without any length limits.
+It should not be an existing word in any language, like dog or cyberpunk.
+It should not be TOK, because it will clash with other fine-tunes if you ever want to combine them.
+Case doesn't matter, but capital letters can help visually distinguish the trigger word from the rest of the text prompt.
+For my zeke/ziki-flux fine-tune, I chose ZIKI as a trigger word. Short, unique, and memorable.
+
+Got your trigger word? Hold it in your mind for a second. You'll use it in the next step.
+
+Step 3: Create and train a model
+There are a couple ways to fine-tune Flux on Replicate. You can use the web-based training form, or the API. The API is great for creating and updating fine-tunes in an automated or programmatic way, but in this guide we'll just use the web-based form. It's easier.
+
+Tip
+If you prefer writing code over clicking buttons, check out our guide to fine-tuning Flux with an API.
+Go to replicate.com/ostris/flux-dev-lora-trainer to start the web-based training process.
+
+For the destination input, you'll choose a model to publish to. This can be an existing model you've already created, or a new model:
+
+Your fine-tuned Flux model can public or private.
+Your fine-tuned Flux model can public or private.
+For the input_images input, drag and drop the zip file you created earlier.
+
+For the trigger_word input, enter the string you chose earlier. Make sure it's unique!
+
+For steps, leave it at 1000. Any less and your training process will not properly learn the concept in your training images. Any more and you could be incurring extra time and cost without much improvement in the model performance.
+
+You'll be billed per second for the time the training process takes to run. Trainings for the Flux model run on Nvidia H100 GPU hardware, which costs $0.001528 per second at the time of this writing. For a 20-minute training (which is typical when using about 20 training images and 1000 steps), you can expect to pay about $1.85 USD. Once your model is trained, you can run it with an API just like any other Replicate model, and you'll only be billed for the compute time it takes to generate an image.
+
+Leave the rest of the inputs at their default values and click Create training.
+
+Step 4: Stand up and stretch
+The training process is pretty fast, but it still takes a few minutes. If you're using ten images and 1000 steps, it will take approximately 20 minutes. Use this opportunity to get up from your computer, stretch your arms and legs, grab a drink of water, etc.
+
+Then come back and your model should be ready to go.
+
+Step 5: Generate images on the web
+Once the training process is complete, your model will be ready to run. The easiest way to get started is by running it on the web.
+
+The only input you'll need to enter is the prompt. The rest you can leave alone to start. Flux is great at following long prompts, so the more detailed and descriptive you make the prompt the better. Be sure to include your trigger_word in the prompt to activate your newly trained concept in the resulting images.
+
+Run your new fine-tuned model from the Replicate web playground.
+Run your new fine-tuned model from the Replicate web playground.
+Step 6: Generate images using the API
+The web playground is a great place to start playing with your new model, but generating images one click at a time can get old pretty fast. Luckily your model is also hosted in the cloud with an API, so you can run it from your own code using the programming language of your choice.
+
+When you run a model, you'll see tabs for different languages like Node.js and Python. These tabs contain code snippets that show you how to construct an API call to reproduce the exact inputs you just entered in the browser form.
+
+Click the Node.js tab in the web playground to see the API code:
+
+Run your new fine-tuned model with Node.js
+Run your new fine-tuned model with Node.js
+This will show the exact setup steps and code snippet you'll need to run the model on your own. Here's an abbreviated version of the Node.js code to get you started:
+
+
+Copy
+import Replicate from "replicate"
+const replicate = new Replicate()
+const model = "zeke/ziki-flux:dadc276a9062240e68f110ca06521752f334777a94f031feb0ae78ae3edca58e"
+const prompt = "ZIKI, an adult man, standing atop Mount Everest at dawn..."
+const output = await replicate.run(model, { input: { prompt } })
+console.log(output)
+Step 7: Use a language model to write better prompts
+Sometimes it's hard to think of a good prompt from scratch, and using a really simple prompt like "ZIKI wearing a turtleneck holiday sweater" is not going to give you very interesting results.
+
+This is where language models come to the rescue. Here's an example language model prompt to help crank out some ideas for interesting image-generation prompts:
+
+Write ten prompts for an image generation model. The prompts should describe a fictitious person named ZIKI in various scenarios. Make sure to use the word ZIKI in all caps in every prompt. Make the prompts highly detailed and interesting, and make them varied in subject matter. Make sure the prompts will generate images that include unobscured facial details. ZIKI is a 43 year old adult male. Include some reference to this in prompt to avoid misrepresenting ZIKI's age or gender. Do not allude to ZIKI's eye color.
+
+This generates some interesting prompts:
+
+Close-up of ZIKI, a male street artist in his 40s, spray-painting a vibrant mural on a city wall. His face shows intense concentration, with flecks of paint on his cheeks and forehead. He wears a respirator mask around his neck and a beanie on his head. The partially completed mural is visible behind him.
+
+ZIKI, a dapper gentleman spy in his 40s, engaged in a high-stakes poker game in a luxurious Monte Carlo casino. His face betrays no emotion as he studies his cards, one eyebrow slightly raised. He wears a tailored tuxedo and a bow tie, with a martini glass on the table in front of him.
+
+ZIKI, a distinguished-looking gentleman in his 40s, conducting a symphony orchestra. His expressive face shows intense concentration as he gestures dramatically with a baton. He wears a crisp tuxedo, and his salt-and-pepper hair is slightly disheveled from his passionate movements.
+
+To get started writing your own prompts, check out Meta Llama 3.1 405b, a fast and powerful language model that you can in the web or with an API on Replicate, just like your own model:
+
+
+Copy
+import Replicate from "replicate"
+const replicate = new Replicate()
+const model = "meta/meta-llama-3.1-405b-instruct"
+const prompt = "Write ten prompts for an image generation model..."
+const output = await replicate.run(model, { input: { prompt } })
+console.log(output)
+Step 8: Have fun and iterate
+Now that you've got a fine-tuned image generation model and a language model to help generate prompts, it's time to start playing around and generating fun images.
+
+If you need inspiration, check the collection of Flux fine-tunes on Replicate to see what other people have created.
